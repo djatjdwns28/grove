@@ -1,6 +1,6 @@
 {
   "name": "grove",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Multi-directory worktree terminal manager",
   "main": "electron/main.js",
   "scripts": {
@@ -22,14 +22,15 @@
     "mac": {
       "target": ["dmg", "zip"],
       "category": "public.app-category.developer-tools",
-      "icon": null
+      "icon": "build/icon.icns"
     },
     "win": {
       "target": ["nsis"],
-      "icon": null
+      "icon": "build/icon.png"
     },
     "linux": {
       "target": ["AppImage"],
+      "icon": "build/icon.png",
       "category": "Development"
     },
     "publish": {

@@ -8,3 +8,5 @@ dist/
 *.snap
 out/
 build/
+!build/icon.*
+!build/icon-*.png
