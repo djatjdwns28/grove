@@ -62,7 +62,7 @@ app.whenReady().then(() => {
 
     const shell = process.env.SHELL || (os.platform() === 'win32' ? 'powershell.exe' : '/bin/zsh')
 
-    const ptyProcess = pty.spawn(shell, [], {
+    const ptyProcess = pty.spawn(shell, ['--login'], {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
