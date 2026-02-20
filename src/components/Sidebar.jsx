@@ -88,7 +88,7 @@ function BranchPicker({ branches, worktrees, pos, onSelect, onClose, creating })
   )
 }
 
-function Sidebar({ onOpenSettings }) {
+function Sidebar({ onOpenSettings, style }) {
   const {
     directories,
     addDirectory,
@@ -279,7 +279,7 @@ function Sidebar({ onOpenSettings }) {
   }
 
   return (
-    <div className="sidebar">
+    <div className="sidebar" style={style}>
       {pickerState && (
         <BranchPicker
           branches={pickerState.branches}

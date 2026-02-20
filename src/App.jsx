@@ -217,6 +217,31 @@ function WorkspaceDivider({ divider, mainRef }) {
   )
 }
 
+function SidebarResizer({ width, onResize }) {
+  const handleMouseDown = (e) => {
+    e.preventDefault()
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const handleMouseMove = (e) => {
+      const newWidth = Math.max(160, Math.min(500, e.clientX))
+      onResize(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+
+  return <div className="sidebar-resizer" onMouseDown={handleMouseDown} />
+}
+
 function App() {
   const activeSessionId = useStore((s) => s.activeSessionId)
   const directories = useStore((s) => s.directories)
@@ -233,6 +258,10 @@ function App() {
   const [showRecent, setShowRecent] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [mainDropZone, setMainDropZone] = useState(null)
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('grove-sidebar-width')
+    return saved ? parseInt(saved, 10) : 230
+  })
   const mainRef = useRef(null)
 
   // Reset drop zone when drag ends
@@ -333,7 +362,8 @@ function App() {
   return (
     <div className="app">
       <div className="app-body">
-      <Sidebar onOpenSettings={() => setShowSettings(true)} />
+      <Sidebar onOpenSettings={() => setShowSettings(true)} style={{ width: sidebarWidth }} />
+      <SidebarResizer width={sidebarWidth} onResize={(w) => { setSidebarWidth(w); localStorage.setItem('grove-sidebar-width', w) }} />
       <div className="main" ref={mainRef}>
         {allSessions.length === 0 && (
           <div className="empty-state">
