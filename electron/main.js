@@ -5,6 +5,7 @@ const fs = require('fs')
 const { execSync, exec } = require('child_process')
 
 const pty = require('node-pty')
+const { autoUpdater } = require('electron-updater')
 
 const isDev = !app.isPackaged
 const ptySessions = new Map()
@@ -36,6 +37,32 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow()
+
+  // 자동 업데이트 (프로덕션에서만)
+  if (!isDev) {
+    autoUpdater.autoDownload = false
+    autoUpdater.checkForUpdates()
+
+    autoUpdater.on('update-available', (info) => {
+      mainWindow.webContents.send('update:available', info.version)
+    })
+
+    autoUpdater.on('download-progress', (progress) => {
+      mainWindow.webContents.send('update:progress', Math.round(progress.percent))
+    })
+
+    autoUpdater.on('update-downloaded', () => {
+      mainWindow.webContents.send('update:downloaded')
+    })
+  }
+
+  ipcMain.handle('update:download', () => {
+    autoUpdater.downloadUpdate()
+  })
+
+  ipcMain.handle('update:install', () => {
+    autoUpdater.quitAndInstall()
+  })
 
   // PTY 생성
   ipcMain.handle('pty:create', (event, { id, cwd }) => {

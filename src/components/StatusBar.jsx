@@ -7,6 +7,9 @@ function StatusBar() {
   const broadcastMode = useStore((s) => s.broadcastMode)
   const toggleBroadcast = useStore((s) => s.toggleBroadcast)
   const [sysInfo, setSysInfo] = useState(null)
+  const [updateState, setUpdateState] = useState(null) // null | 'available' | 'downloading' | 'ready'
+  const [updateVersion, setUpdateVersion] = useState('')
+  const [downloadPercent, setDownloadPercent] = useState(0)
 
   const totalSessions = directories.reduce((sum, d) => sum + d.sessions.length, 0)
 
@@ -26,6 +29,29 @@ function StatusBar() {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    if (!window.electronAPI.update) return
+    window.electronAPI.update.onAvailable((version) => {
+      setUpdateVersion(version)
+      setUpdateState('available')
+    })
+    window.electronAPI.update.onProgress((percent) => {
+      setDownloadPercent(percent)
+    })
+    window.electronAPI.update.onDownloaded(() => {
+      setUpdateState('ready')
+    })
+  }, [])
+
+  const handleUpdate = () => {
+    if (updateState === 'available') {
+      setUpdateState('downloading')
+      window.electronAPI.update.download()
+    } else if (updateState === 'ready') {
+      window.electronAPI.update.install()
+    }
+  }
+
   return (
     <div className="status-bar">
       <div className="status-left">
@@ -42,6 +68,13 @@ function StatusBar() {
         )}
       </div>
       <div className="status-right">
+        {updateState && (
+          <button className="status-update-btn" onClick={handleUpdate}>
+            {updateState === 'available' && `v${updateVersion} 업데이트`}
+            {updateState === 'downloading' && `다운로드 중 ${downloadPercent}%`}
+            {updateState === 'ready' && '재시작하여 업데이트'}
+          </button>
+        )}
         <button
           className={`status-broadcast-btn ${broadcastMode ? 'active' : ''}`}
           onClick={toggleBroadcast}
