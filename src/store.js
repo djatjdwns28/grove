@@ -1,0 +1,410 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import { v4 as uuidv4 } from 'uuid'
+
+const defaultSettings = {
+  fontFamily: '"D2CodingLigature Nerd Font", "D2Coding", Menlo, monospace',
+  fontSize: 13,
+  lineHeight: 1.3,
+  cursorBlink: true,
+  scrollback: 5000,
+  themeName: 'catppuccin-mocha',
+  customColors: null,
+  snippets: [],
+}
+
+const updateNodeSizes = (node, path, sizes) => {
+  if (path.length === 0) return { ...node, sizes }
+  const [idx, ...rest] = path
+  return {
+    ...node,
+    children: node.children.map((child, i) =>
+      i === idx ? updateNodeSizes(child, rest, sizes) : child
+    ),
+  }
+}
+
+const useStore = create(
+  persist(
+    (set, get) => ({
+      directories: [],
+      activeSessionId: null,
+      recentlyClosed: [],
+      settings: { ...defaultSettings },
+
+      updateSettings: (partial) =>
+        set((s) => ({ settings: { ...s.settings, ...partial } })),
+
+      resetSettings: () => set({ settings: { ...defaultSettings } }),
+
+      addDirectory: (path) => {
+        const name = path.split('/').pop() || path
+        const newDir = { id: uuidv4(), path, name, expanded: true, sessions: [] }
+        set((s) => ({ directories: [...s.directories, newDir] }))
+        return newDir.id
+      },
+
+      removeDirectory: (dirId) => {
+        const dir = get().directories.find((d) => d.id === dirId)
+        dir?.sessions.forEach((s) => window.electronAPI?.pty.kill(s.id))
+        set((s) => ({
+          directories: s.directories.filter((d) => d.id !== dirId),
+          activeSessionId: s.activeSessionId,
+        }))
+      },
+
+      addSession: (dirId, name, cwd) => {
+        const id = uuidv4()
+        set((s) => ({
+          directories: s.directories.map((d) =>
+            d.id === dirId ? { ...d, sessions: [...d.sessions, {
+              id, name, cwd,
+              layout: { type: 'pane', id, cwd },
+              activePaneId: id,
+            }] } : d
+          ),
+          activeSessionId: id,
+        }))
+        return id
+      },
+
+      // 분할 관련
+      splitPane: (sessionId, paneId, direction) => {
+        const newPaneId = uuidv4()
+        const insertSplit = (node) => {
+          if (node.type === 'pane' && node.id === paneId) {
+            return {
+              type: direction,
+              children: [node, { type: 'pane', id: newPaneId, cwd: node.cwd }],
+            }
+          }
+          if (node.children) {
+            return { ...node, children: node.children.map(insertSplit) }
+          }
+          return node
+        }
+        set((s) => ({
+          directories: s.directories.map((d) => ({
+            ...d,
+            sessions: d.sessions.map((ss) => {
+              if (ss.id !== sessionId) return ss
+              return { ...ss, layout: insertSplit(ss.layout || { type: 'pane', id: ss.id, cwd: ss.cwd }), activePaneId: newPaneId }
+            }),
+          })),
+        }))
+        return newPaneId
+      },
+
+      closePane: (sessionId, paneId) => {
+        window.electronAPI?.pty.kill(paneId)
+        const removeNode = (node) => {
+          if (node.type === 'pane') return node.id === paneId ? null : node
+          const children = node.children.map(removeNode).filter(Boolean)
+          if (children.length === 0) return null
+          if (children.length === 1) return children[0]
+          return { ...node, children }
+        }
+        const getFirst = (node) => {
+          if (node.type === 'pane') return node.id
+          return getFirst(node.children[0])
+        }
+        set((s) => ({
+          directories: s.directories.map((d) => ({
+            ...d,
+            sessions: d.sessions.map((ss) => {
+              if (ss.id !== sessionId) return ss
+              const layout = removeNode(ss.layout)
+              if (!layout) return ss
+              const activePaneId = ss.activePaneId === paneId ? getFirst(layout) : ss.activePaneId
+              return { ...ss, layout, activePaneId }
+            }),
+          })),
+        }))
+      },
+
+      setActivePaneId: (sessionId, paneId) =>
+        set((s) => ({
+          directories: s.directories.map((d) => ({
+            ...d,
+            sessions: d.sessions.map((ss) =>
+              ss.id === sessionId ? { ...ss, activePaneId: paneId } : ss
+            ),
+          })),
+        })),
+
+      removeSession: (dirId, sessionId) => {
+        // kill all panes in layout
+        const killAll = (node) => {
+          if (!node) return
+          if (node.type === 'pane') { window.electronAPI?.pty.kill(node.id); return }
+          node.children?.forEach(killAll)
+        }
+        const dir = get().directories.find((d) => d.id === dirId)
+        const session = dir?.sessions.find((ss) => ss.id === sessionId)
+        if (session?.layout) killAll(session.layout)
+        else window.electronAPI?.pty.kill(sessionId)
+        set((s) => {
+          const dir = s.directories.find((d) => d.id === dirId)
+          const closed = dir?.sessions.find((ss) => ss.id === sessionId)
+          const remaining = dir?.sessions.filter((ss) => ss.id !== sessionId) || []
+          const newActive =
+            s.activeSessionId === sessionId
+              ? (remaining[remaining.length - 1]?.id || null)
+              : s.activeSessionId
+          const recentlyClosed = closed
+            ? [{ dirId, name: closed.name, cwd: closed.cwd, closedAt: Date.now() }, ...s.recentlyClosed].slice(0, 10)
+            : s.recentlyClosed
+          // Clean up workspace layout
+          let newWorkspaceLayout = s.workspaceLayout
+          if (newWorkspaceLayout) {
+            const removeFromWs = (node) => {
+              if (node.type === 'session') return node.sessionId === sessionId ? null : node
+              const children = node.children.map(removeFromWs).filter(Boolean)
+              if (children.length === 0) return null
+              if (children.length === 1) return children[0]
+              return { ...node, children }
+            }
+            newWorkspaceLayout = removeFromWs(newWorkspaceLayout)
+            if (newWorkspaceLayout?.type === 'session') newWorkspaceLayout = null
+          }
+
+          return {
+            directories: s.directories.map((d) =>
+              d.id === dirId ? { ...d, sessions: remaining } : d
+            ),
+            activeSessionId: newActive,
+            recentlyClosed,
+            workspaceLayout: newWorkspaceLayout,
+          }
+        })
+      },
+
+      restoreSession: (index) => {
+        const { recentlyClosed, directories } = get()
+        const item = recentlyClosed[index]
+        if (!item) return
+        const dir = directories.find((d) => d.id === item.dirId)
+        if (!dir) return
+        const id = uuidv4()
+        set((s) => ({
+          directories: s.directories.map((d) =>
+            d.id === item.dirId ? { ...d, sessions: [...d.sessions, { id, name: item.name, cwd: item.cwd }] } : d
+          ),
+          activeSessionId: id,
+          recentlyClosed: s.recentlyClosed.filter((_, i) => i !== index),
+        }))
+      },
+
+      setActiveSession: (id) => {
+        const state = get()
+        if (state.workspaceLayout) {
+          const isIn = (node, sid) => {
+            if (!node) return false
+            if (node.type === 'session') return node.sessionId === sid
+            return node.children?.some(c => isIn(c, sid)) || false
+          }
+          if (!isIn(state.workspaceLayout, id)) {
+            set({ activeSessionId: id, workspaceLayout: null })
+            return
+          }
+        }
+        set({ activeSessionId: id })
+      },
+
+      toggleDirectory: (dirId) =>
+        set((s) => ({
+          directories: s.directories.map((d) =>
+            d.id === dirId ? { ...d, expanded: !d.expanded } : d
+          ),
+        })),
+
+      // 기능 2: 세션 이름 변경
+      updateSessionName: (dirId, sessionId, newName) =>
+        set((s) => ({
+          directories: s.directories.map((d) =>
+            d.id === dirId
+              ? { ...d, sessions: d.sessions.map((ss) =>
+                  ss.id === sessionId ? { ...ss, name: newName } : ss
+                )}
+              : d
+          ),
+        })),
+
+      // 기능 3: Git 상태 업데이트
+      updateSessionGitStatus: (sessionId, gitStatus) =>
+        set((s) => ({
+          directories: s.directories.map((d) => ({
+            ...d,
+            sessions: d.sessions.map((ss) =>
+              ss.id === sessionId ? { ...ss, gitStatus } : ss
+            ),
+          })),
+        })),
+
+      // 기능 6: 세션 순서 변경
+      reorderSessions: (dirId, fromIdx, toIdx) =>
+        set((s) => ({
+          directories: s.directories.map((d) => {
+            if (d.id !== dirId) return d
+            const sessions = [...d.sessions]
+            const [item] = sessions.splice(fromIdx, 1)
+            sessions.splice(toIdx, 0, item)
+            return { ...d, sessions }
+          }),
+        })),
+
+      // 기능 6: 디렉토리 순서 변경
+      reorderDirectories: (fromIdx, toIdx) =>
+        set((s) => {
+          const dirs = [...s.directories]
+          const [item] = dirs.splice(fromIdx, 1)
+          dirs.splice(toIdx, 0, item)
+          return { directories: dirs }
+        }),
+
+      // 브로드캐스트 모드
+      broadcastMode: false,
+      toggleBroadcast: () => set((s) => ({ broadcastMode: !s.broadcastMode })),
+
+      // 세션 복제
+      cloneSession: (dirId, sessionId) => {
+        const state = get()
+        const dir = state.directories.find((d) => d.id === dirId)
+        const session = dir?.sessions.find((s) => s.id === sessionId)
+        if (!session) return null
+        const id = uuidv4()
+        const name = session.name + ' (복사)'
+        set((s) => ({
+          directories: s.directories.map((d) =>
+            d.id === dirId ? { ...d, sessions: [...d.sessions, {
+              id, name, cwd: session.cwd,
+              layout: { type: 'pane', id, cwd: session.cwd },
+              activePaneId: id,
+            }] } : d
+          ),
+          activeSessionId: id,
+        }))
+        return id
+      },
+
+      // 워크스페이스 분할 (다중 세션 동시 보기)
+      workspaceLayout: null,
+      draggingSessionId: null,
+      setDraggingSessionId: (id) => set({ draggingSessionId: id }),
+
+      addSessionToWorkspace: (targetSessionId, newSessionId, zone) => {
+        const state = get()
+        const direction = (zone === 'left' || zone === 'right') ? 'vsplit' : 'hsplit'
+        const insertBefore = zone === 'left' || zone === 'top'
+
+        const isInLayout = (node, sid) => {
+          if (!node) return false
+          if (node.type === 'session') return node.sessionId === sid
+          return node.children?.some(c => isInLayout(c, sid)) || false
+        }
+        if (state.workspaceLayout && isInLayout(state.workspaceLayout, newSessionId)) return
+
+        const newNode = { type: 'session', sessionId: newSessionId }
+
+        if (!state.workspaceLayout) {
+          const targetNode = { type: 'session', sessionId: targetSessionId }
+          const children = insertBefore ? [newNode, targetNode] : [targetNode, newNode]
+          set({ workspaceLayout: { type: direction, children }, activeSessionId: newSessionId })
+          return
+        }
+
+        const insertSplit = (node) => {
+          if (node.type === 'session' && node.sessionId === targetSessionId) {
+            const children = insertBefore ? [newNode, node] : [node, newNode]
+            return { type: direction, children }
+          }
+          if (node.children) {
+            return { ...node, children: node.children.map(insertSplit) }
+          }
+          return node
+        }
+        set({ workspaceLayout: insertSplit(state.workspaceLayout), activeSessionId: newSessionId })
+      },
+
+      removeSessionFromWorkspace: (sessionId) => {
+        const state = get()
+        if (!state.workspaceLayout) return
+
+        const removeNode = (node) => {
+          if (node.type === 'session') return node.sessionId === sessionId ? null : node
+          const children = node.children.map(removeNode).filter(Boolean)
+          if (children.length === 0) return null
+          if (children.length === 1) return children[0]
+          return { ...node, children }
+        }
+        const newLayout = removeNode(state.workspaceLayout)
+        if (!newLayout || newLayout.type === 'session') {
+          set({ workspaceLayout: null, activeSessionId: newLayout?.sessionId || state.activeSessionId })
+        } else {
+          set({ workspaceLayout: newLayout })
+        }
+      },
+
+      updateLayoutSizes: (sessionId, path, sizes) =>
+        set((s) => ({
+          directories: s.directories.map((d) => ({
+            ...d,
+            sessions: d.sessions.map((ss) =>
+              ss.id === sessionId
+                ? { ...ss, layout: updateNodeSizes(ss.layout, path, sizes) }
+                : ss
+            ),
+          })),
+        })),
+
+      updateWorkspaceSizes: (path, sizes) =>
+        set((s) => ({
+          workspaceLayout: s.workspaceLayout
+            ? updateNodeSizes(s.workspaceLayout, path, sizes)
+            : null,
+        })),
+
+      // 워크스페이스 루트 레벨에 세션 추가 (기존 레이아웃 전체를 한쪽으로)
+      addSessionToWorkspaceRoot: (newSessionId, zone) => {
+        const state = get()
+        const direction = (zone === 'left' || zone === 'right') ? 'vsplit' : 'hsplit'
+        const insertBefore = zone === 'left' || zone === 'top'
+        const newNode = { type: 'session', sessionId: newSessionId }
+
+        const isInLayout = (node, sid) => {
+          if (!node) return false
+          if (node.type === 'session') return node.sessionId === sid
+          return node.children?.some(c => isInLayout(c, sid)) || false
+        }
+        if (state.workspaceLayout && isInLayout(state.workspaceLayout, newSessionId)) return
+
+        let existingLayout = state.workspaceLayout
+        if (!existingLayout) {
+          if (!state.activeSessionId) return
+          existingLayout = { type: 'session', sessionId: state.activeSessionId }
+        }
+
+        const children = insertBefore ? [newNode, existingLayout] : [existingLayout, newNode]
+        set({ workspaceLayout: { type: direction, children }, activeSessionId: newSessionId })
+      },
+    }),
+    {
+      name: 'worktree-terminal',
+      // 기능 8: 세션 포함 저장 (자동 복원)
+      partialize: (s) => ({
+        directories: s.directories.map((d) => ({
+          ...d,
+          sessions: d.sessions.map(({ id, name, cwd, layout, activePaneId }) => ({
+            id, name, cwd,
+            layout: layout || { type: 'pane', id, cwd },
+            activePaneId: activePaneId || id,
+          })),
+        })),
+        activeSessionId: s.activeSessionId,
+        settings: s.settings,
+      }),
+    }
+  )
+)
+
+export default useStore

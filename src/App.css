@@ -1,0 +1,1475 @@
+/* ─── Layout ─────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #1e1e2e;
+  position: relative;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.empty-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #45475a;
+  font-size: 14px;
+}
+
+.empty-arrow {
+  font-size: 20px;
+}
+
+/* ─── Sidebar ─────────────────────────────────── */
+.sidebar {
+  width: 230px;
+  min-width: 180px;
+  background: #181825;
+  border-right: 1px solid #313244;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 14px 14px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6c7086;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #313244;
+  /* macOS traffic light 영역 확보 */
+  padding-top: 44px;
+  -webkit-app-region: drag;
+}
+
+.directory-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.directory-list::-webkit-scrollbar { width: 3px; }
+.directory-list::-webkit-scrollbar-thumb {
+  background: #313244;
+  border-radius: 2px;
+}
+
+/* ─── Directory Row ───────────────────────────── */
+.dir-block {
+  margin-bottom: 1px;
+}
+
+.dir-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin: 0 4px;
+  transition: background 0.1s;
+}
+
+.dir-row:hover { background: #26263a; }
+
+.chevron {
+  font-size: 9px;
+  color: #585b70;
+  min-width: 12px;
+  text-align: center;
+}
+
+.dir-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #cdd6f4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row-actions {
+  display: flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.dir-row:hover .row-actions { opacity: 1; }
+
+/* ─── Session List ────────────────────────────── */
+.session-list {
+  padding: 2px 0 4px 24px;
+}
+
+.no-sessions {
+  font-size: 11px;
+  color: #45475a;
+  padding: 4px 6px;
+  font-style: italic;
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  margin: 1px 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.session-row:hover { background: #26263a; }
+
+.session-row.active {
+  background: #313244;
+}
+
+.dot {
+  font-size: 7px;
+  color: #45475a;
+  min-width: 8px;
+}
+
+.session-row.active .dot { color: #a6e3a1; }
+
+.session-name {
+  flex: 1;
+  font-size: 12px;
+  color: #bac2de;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 기능 2: 세션 이름 변경 */
+.session-rename-input {
+  flex: 1;
+  background: #1e1e2e;
+  border: 1px solid #89b4fa;
+  border-radius: 3px;
+  color: #cdd6f4;
+  font-size: 12px;
+  padding: 1px 4px;
+  outline: none;
+  min-width: 0;
+}
+
+/* 기능 3: Git 상태 뱃지 (사이드바) */
+.session-git-badge {
+  font-size: 9px;
+  background: rgba(249, 226, 175, 0.15);
+  color: #f9e2af;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* 기능 6: 드래그 앤 드롭 */
+.session-row.drag-over { border-top: 2px solid #89b4fa; }
+.dir-block.drag-over > .dir-row { border-top: 2px solid #89b4fa; }
+
+.session-row .icon-btn,
+.session-row .wt-delete-btn {
+  opacity: 0;
+}
+
+.session-row:hover .icon-btn,
+.session-row:hover .wt-delete-btn { opacity: 1; }
+
+.wt-delete-btn {
+  background: none;
+  border: none;
+  color: #f38ba8;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+
+.wt-delete-btn:hover {
+  background: rgba(243, 139, 168, 0.15);
+}
+
+/* ─── Buttons ─────────────────────────────────── */
+.icon-btn {
+  background: none;
+  border: none;
+  color: #6c7086;
+  cursor: pointer;
+  font-size: 13px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  padding: 0;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+
+.icon-btn:hover {
+  background: #45475a;
+  color: #cdd6f4;
+}
+
+.icon-btn.danger:hover {
+  background: rgba(243, 139, 168, 0.15);
+  color: #f38ba8;
+}
+
+.sidebar-footer {
+  padding: 10px 8px;
+  border-top: 1px solid #313244;
+}
+
+.add-dir-btn {
+  width: 100%;
+  background: none;
+  border: 1px dashed #313244;
+  color: #585b70;
+  padding: 7px;
+  font-size: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-dir-btn:hover {
+  border-color: #89b4fa;
+  color: #89b4fa;
+  background: rgba(137, 180, 250, 0.06);
+}
+
+/* ─── Worktree Picker ─────────────────────────── */
+.wt-picker {
+  z-index: 9999;
+  background: #24273a;
+  border: 1px solid #45475a;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wt-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+.wt-picker-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6c7086;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.wt-picker-search {
+  flex: 1;
+  background: #1e1e2e;
+  border: 1px solid #313244;
+  border-radius: 4px;
+  color: #cdd6f4;
+  font-size: 11px;
+  padding: 3px 7px;
+  outline: none;
+  min-width: 0;
+}
+
+.wt-picker-search:focus {
+  border-color: #89b4fa;
+}
+
+.wt-picker-search::placeholder {
+  color: #45475a;
+}
+
+/* 6개 아이템 높이로 고정, 나머지 스크롤 */
+.wt-picker-list {
+  overflow-y: auto;
+  max-height: calc(6 * 34px);
+}
+
+.wt-picker-list::-webkit-scrollbar { width: 3px; }
+.wt-picker-list::-webkit-scrollbar-thumb {
+  background: #45475a;
+  border-radius: 2px;
+}
+
+.wt-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+  height: 34px;
+}
+
+.wt-picker-item:hover { background: #313244; }
+
+.wt-picker-section {
+  font-size: 9px;
+  font-weight: 700;
+  color: #45475a;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 6px 12px 3px;
+}
+
+.wt-picker-divider {
+  height: 1px;
+  background: #313244;
+  margin: 4px 0;
+}
+
+.wt-picker-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: #45475a;
+  text-align: center;
+}
+
+.wt-branch {
+  font-size: 12px;
+  font-weight: 500;
+  color: #cdd6f4;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wt-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wt-badge.has-wt {
+  background: rgba(137, 180, 250, 0.15);
+  color: #89b4fa;
+}
+
+.wt-badge.no-wt {
+  background: rgba(166, 227, 161, 0.1);
+  color: #a6e3a1;
+}
+
+.wt-picker-loading {
+  padding: 14px;
+  font-size: 12px;
+  color: #6c7086;
+  text-align: center;
+}
+
+/* ─── Terminal ────────────────────────────────── */
+.terminal-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+  height: 36px;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.terminal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.terminal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.terminal-session-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #cdd6f4;
+  white-space: nowrap;
+}
+
+.terminal-cwd {
+  font-size: 11px;
+  color: #45475a;
+  font-family: "JetBrains Mono", monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 기능 3: Git 상태 (터미널 헤더) */
+.terminal-git-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.git-branch-badge {
+  font-size: 10px;
+  color: #89b4fa;
+  background: rgba(137, 180, 250, 0.1);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.git-changed-badge {
+  font-size: 10px;
+  color: #f9e2af;
+  background: rgba(249, 226, 175, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.git-ahead-badge {
+  font-size: 10px;
+  color: #a6e3a1;
+}
+
+.git-behind-badge {
+  font-size: 10px;
+  color: #f38ba8;
+}
+
+/* 기능 5: 검색 바 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: #1e1e2e;
+  border: 1px solid #313244;
+  border-radius: 4px;
+  color: #cdd6f4;
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+}
+
+.search-input:focus { border-color: #89b4fa; }
+
+.search-nav-btn {
+  background: none;
+  border: 1px solid #313244;
+  color: #6c7086;
+  cursor: pointer;
+  font-size: 11px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 0;
+}
+
+.search-nav-btn:hover {
+  background: #313244;
+  color: #cdd6f4;
+}
+
+/* 기능 7: 스니펫 바 */
+.snippets-bar {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.snippets-bar::-webkit-scrollbar { height: 0; }
+
+.snippet-btn {
+  background: #313244;
+  border: 1px solid #45475a;
+  color: #bac2de;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.1s;
+}
+
+.snippet-btn:hover {
+  background: #45475a;
+  color: #cdd6f4;
+}
+
+/* ─── Split Panes ────────────────────────────── */
+.split-area {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.split-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.split-vertical {
+  flex-direction: row;
+}
+
+.split-horizontal {
+  flex-direction: column;
+}
+
+.split-child {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+.split-divider {
+  flex-shrink: 0;
+  background: #313244;
+  position: relative;
+  z-index: 5;
+  transition: background 0.1s;
+}
+
+.split-vertical > .split-divider {
+  width: 1px;
+  cursor: col-resize;
+  padding: 0 2px;
+  margin: 0 -2px;
+  background-clip: content-box;
+}
+
+.split-horizontal > .split-divider {
+  height: 1px;
+  cursor: row-resize;
+  padding: 2px 0;
+  margin: -2px 0;
+  background-clip: content-box;
+}
+
+.split-divider:hover,
+.split-divider-active {
+  background: #89b4fa !important;
+}
+
+/* 워크스페이스 디바이더 (절대 위치) */
+.ws-divider {
+  background: transparent;
+  transition: background 0.1s;
+}
+
+.ws-divider::after {
+  content: '';
+  position: absolute;
+  background: #313244;
+  transition: background 0.1s;
+}
+
+.ws-divider[style*="cursor: col-resize"]::after {
+  top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-0.5px);
+}
+
+.ws-divider[style*="cursor: row-resize"]::after {
+  left: 0; right: 0; top: 50%; height: 1px; transform: translateY(-0.5px);
+}
+
+.ws-divider:hover::after,
+.ws-divider-active::after {
+  background: #89b4fa;
+}
+
+.pane-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pane-wrapper.pane-focused {
+  outline: 1px solid rgba(137, 180, 250, 0.3);
+  outline-offset: -1px;
+}
+
+.terminal-container {
+  flex: 1;
+  padding: 6px 8px;
+  overflow: hidden;
+}
+
+.terminal-container .xterm {
+  height: 100%;
+}
+
+/* ─── Recent Sessions Picker (Cmd+T) ─────────── */
+.recent-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+}
+
+.recent-picker {
+  background: #24273a;
+  border: 1px solid #45475a;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  width: 380px;
+  overflow: hidden;
+}
+
+.recent-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6c7086;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid #313244;
+}
+
+.recent-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.recent-list::-webkit-scrollbar { width: 3px; }
+.recent-list::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.recent-item:hover,
+.recent-item.selected {
+  background: #313244;
+}
+
+.recent-name {
+  font-size: 13px;
+  color: #cdd6f4;
+  font-weight: 500;
+}
+
+.recent-dir {
+  font-size: 11px;
+  color: #585b70;
+}
+
+.recent-empty {
+  padding: 20px 14px;
+  font-size: 12px;
+  color: #45475a;
+  text-align: center;
+}
+
+.recent-hint {
+  font-size: 10px;
+  color: #45475a;
+  padding: 6px 14px;
+  border-top: 1px solid #313244;
+  text-align: center;
+}
+
+/* ─── Settings Modal ─────────────────────────── */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-modal {
+  background: #24273a;
+  border: 1px solid #45475a;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  width: 720px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+.settings-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #cdd6f4;
+}
+
+/* Settings Tabs */
+.settings-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 18px;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+.settings-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #585b70;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.settings-tab:hover {
+  color: #bac2de;
+}
+
+.settings-tab.active {
+  color: #89b4fa;
+  border-bottom-color: #89b4fa;
+}
+
+.settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 18px 14px;
+}
+
+.settings-body::-webkit-scrollbar { width: 4px; }
+.settings-body::-webkit-scrollbar-thumb {
+  background: #45475a;
+  border-radius: 2px;
+}
+
+.settings-section {
+  padding: 12px 0 8px;
+}
+
+.settings-section + .settings-section {
+  border-top: 1px solid #313244;
+}
+
+.settings-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6c7086;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.settings-label {
+  display: block;
+  font-size: 12px;
+  color: #bac2de;
+  margin-bottom: 5px;
+}
+
+.settings-input {
+  width: 100%;
+  background: #1e1e2e;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  color: #cdd6f4;
+  font-size: 12px;
+  padding: 7px 10px;
+  outline: none;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.settings-input:focus { border-color: #89b4fa; }
+
+.settings-input-narrow { width: 120px; }
+
+.settings-slider {
+  width: 100%;
+  margin-bottom: 12px;
+  accent-color: #89b4fa;
+  height: 4px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Toggle switch */
+.settings-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: #45475a;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.settings-toggle.on { background: #89b4fa; }
+
+.settings-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.settings-toggle.on .settings-toggle-knob {
+  transform: translateX(16px);
+}
+
+/* Theme selector */
+.theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.theme-option:hover { background: #313244; }
+
+.theme-option input[type="radio"] {
+  accent-color: #89b4fa;
+  margin: 0;
+}
+
+.theme-name {
+  flex: 1;
+  font-size: 12px;
+  color: #cdd6f4;
+}
+
+.theme-swatch {
+  width: 40px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid #45475a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Custom color grid */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.color-field input[type="color"] {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  -webkit-appearance: none;
+}
+
+.color-field input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+.color-field input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.color-label {
+  font-size: 10px;
+  color: #6c7086;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Two-column layout */
+.settings-columns {
+  display: flex;
+  gap: 18px;
+  min-height: 0;
+}
+
+.settings-left {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.settings-left::-webkit-scrollbar { width: 4px; }
+.settings-left::-webkit-scrollbar-thumb {
+  background: #45475a;
+  border-radius: 2px;
+}
+
+.settings-right {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+}
+
+/* Preview */
+.settings-preview {
+  flex: 1;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: monospace;
+  white-space: pre;
+  overflow: hidden;
+  border: 1px solid #313244;
+  line-height: 1.5;
+  min-height: 200px;
+}
+
+/* Footer */
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 18px 14px;
+  border-top: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+.settings-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid #45475a;
+  transition: all 0.15s;
+}
+
+.settings-btn.close {
+  background: #89b4fa;
+  color: #1e1e2e;
+  border-color: #89b4fa;
+  font-weight: 600;
+}
+
+.settings-btn.close:hover { background: #74c7ec; border-color: #74c7ec; }
+
+.settings-btn.reset {
+  background: none;
+  color: #6c7086;
+}
+
+.settings-btn.reset:hover {
+  color: #f38ba8;
+  border-color: #f38ba8;
+}
+
+/* Sidebar settings button */
+.sidebar-footer-row {
+  display: flex;
+  gap: 6px;
+}
+
+.sidebar-footer-row .add-dir-btn { flex: 1; }
+
+.settings-gear-btn {
+  background: none;
+  border: 1px solid #313244;
+  color: #585b70;
+  width: 34px;
+  height: 34px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.settings-gear-btn:hover {
+  border-color: #89b4fa;
+  color: #89b4fa;
+  background: rgba(137, 180, 250, 0.06);
+}
+
+/* 기능 7: 스니펫 설정 */
+.snippet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.snippet-item {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.snippet-label-input {
+  width: 80px !important;
+  flex-shrink: 0;
+  margin-bottom: 0 !important;
+}
+
+.snippet-cmd-input {
+  flex: 1 !important;
+  margin-bottom: 0 !important;
+}
+
+.snippet-add-btn {
+  background: none;
+  border: 1px dashed #313244;
+  color: #585b70;
+  padding: 5px;
+  font-size: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.snippet-add-btn:hover {
+  border-color: #89b4fa;
+  color: #89b4fa;
+}
+
+.settings-empty-hint {
+  font-size: 12px;
+  color: #45475a;
+  text-align: center;
+  padding: 16px 0 8px;
+}
+
+/* ─── Workspace Multi-Session Split ──────────── */
+.terminal-wrapper.workspace-pane {
+  border-right: 1px solid #313244;
+  border-bottom: 1px solid #313244;
+  box-sizing: border-box;
+}
+
+.workspace-close-btn {
+  background: none;
+  border: none;
+  color: #585b70;
+  cursor: pointer;
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  padding: 0;
+  transition: all 0.1s;
+  flex-shrink: 0;
+}
+
+.workspace-close-btn:hover {
+  background: rgba(243, 139, 168, 0.15);
+  color: #f38ba8;
+}
+
+/* Drag capture overlay - transparent layer to intercept drag events over xterm */
+.drag-capture-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: transparent;
+}
+
+/* Drop overlay for drag-and-drop session split */
+.drop-overlay {
+  position: absolute;
+  z-index: 100;
+  background: rgba(137, 180, 250, 0.12);
+  border: 2px solid rgba(137, 180, 250, 0.4);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.1s ease;
+}
+
+.drop-overlay-label {
+  font-size: 12px;
+  color: #89b4fa;
+  background: rgba(24, 24, 37, 0.85);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.drop-overlay.drop-left {
+  top: 4px; left: 4px; bottom: 4px; width: calc(50% - 6px);
+}
+
+.drop-overlay.drop-right {
+  top: 4px; right: 4px; bottom: 4px; width: calc(50% - 6px);
+}
+
+.drop-overlay.drop-top {
+  top: 4px; left: 4px; right: 4px; height: calc(50% - 6px);
+}
+
+.drop-overlay.drop-bottom {
+  bottom: 4px; left: 4px; right: 4px; height: calc(50% - 6px);
+}
+
+/* ─── Main Edge Drop Zones (루트 레벨 분할) ──── */
+.main-edge {
+  position: absolute;
+  z-index: 60;
+  background: transparent;
+}
+
+.main-edge-left {
+  top: 0; left: 0; bottom: 0; width: 36px;
+}
+
+.main-edge-right {
+  top: 0; right: 0; bottom: 0; width: 36px;
+}
+
+.main-edge-top {
+  top: 0; left: 36px; right: 36px; height: 36px;
+}
+
+.main-edge-bottom {
+  bottom: 0; left: 36px; right: 36px; height: 36px;
+}
+
+.main-drop-indicator {
+  position: absolute;
+  z-index: 55;
+  background: rgba(166, 227, 161, 0.12);
+  border: 2px solid rgba(166, 227, 161, 0.45);
+  border-radius: 6px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-drop-indicator .drop-overlay-label {
+  color: #a6e3a1;
+}
+
+.main-drop-left {
+  top: 4px; left: 4px; bottom: 4px; width: calc(30% - 6px);
+}
+
+.main-drop-right {
+  top: 4px; right: 4px; bottom: 4px; width: calc(30% - 6px);
+}
+
+.main-drop-top {
+  top: 4px; left: 4px; right: 4px; height: calc(30% - 6px);
+}
+
+.main-drop-bottom {
+  bottom: 4px; left: 4px; right: 4px; height: calc(30% - 6px);
+}
+
+/* ─── Command Palette ────────────────────────── */
+.palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+}
+
+.palette {
+  background: #24273a;
+  border: 1px solid #45475a;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  width: 480px;
+  overflow: hidden;
+}
+
+.palette-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #313244;
+  color: #cdd6f4;
+  font-size: 14px;
+  padding: 14px 16px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.palette-input::placeholder {
+  color: #585b70;
+}
+
+.palette-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.palette-list::-webkit-scrollbar { width: 3px; }
+.palette-list::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
+
+.palette-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.08s;
+}
+
+.palette-item:hover,
+.palette-item.selected {
+  background: #313244;
+}
+
+.palette-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #6c7086;
+  flex-shrink: 0;
+}
+
+.palette-label {
+  font-size: 13px;
+  color: #cdd6f4;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.palette-desc {
+  font-size: 11px;
+  color: #585b70;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.palette-empty {
+  padding: 20px;
+  font-size: 12px;
+  color: #45475a;
+  text-align: center;
+}
+
+.palette-hint {
+  font-size: 10px;
+  color: #45475a;
+  padding: 6px 16px;
+  border-top: 1px solid #313244;
+  text-align: center;
+}
+
+/* ─── Status Bar ─────────────────────────────── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: #181825;
+  border-top: 1px solid #313244;
+  height: 24px;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.status-left,
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-item {
+  font-size: 10px;
+  color: #585b70;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.status-icon {
+  font-size: 10px;
+  color: #6c7086;
+}
+
+.status-branch {
+  color: #89b4fa;
+  font-size: 10px;
+}
+
+.status-mem {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.status-broadcast-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: #585b70;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.status-broadcast-btn:hover {
+  color: #bac2de;
+  border-color: #45475a;
+}
+
+.status-broadcast-btn.active {
+  background: rgba(249, 226, 175, 0.15);
+  color: #f9e2af;
+  border-color: rgba(249, 226, 175, 0.3);
+}
+
+/* ─── Broadcast Toggle (Terminal Header) ─────── */
+.broadcast-toggle-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: #585b70;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.broadcast-toggle-btn:hover {
+  color: #bac2de;
+  border-color: #45475a;
+}
+
+.broadcast-toggle-btn.active {
+  background: rgba(249, 226, 175, 0.15);
+  color: #f9e2af;
+  border-color: rgba(249, 226, 175, 0.3);
+  animation: broadcast-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes broadcast-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ─── Session Clone Button ───────────────────── */
+.session-row .clone-btn {
+  opacity: 0;
+  font-size: 11px;
+}
+
+.session-row:hover .clone-btn {
+  opacity: 1;
+}
+
