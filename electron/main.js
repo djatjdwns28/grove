@@ -44,7 +44,13 @@ app.whenReady().then(() => {
     autoUpdater.checkForUpdates()
 
     autoUpdater.on('update-available', (info) => {
-      mainWindow.webContents.send('update:available', info.version)
+      let notes = ''
+      if (typeof info.releaseNotes === 'string') {
+        notes = info.releaseNotes
+      } else if (Array.isArray(info.releaseNotes)) {
+        notes = info.releaseNotes.map((n) => n.note || '').join('\n')
+      }
+      mainWindow.webContents.send('update:available', { version: info.version, releaseNotes: notes })
     })
 
     autoUpdater.on('download-progress', (progress) => {

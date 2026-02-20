@@ -1,5 +1,40 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import useStore from '../store'
+
+function UpdateTooltip({ version, releaseNotes, onClose, onUpdate }) {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  // Strip HTML tags from release notes
+  const cleanNotes = releaseNotes
+    ? releaseNotes.replace(/<[^>]*>/g, '').trim()
+    : ''
+
+  return (
+    <div className="update-tooltip" ref={ref}>
+      <div className="update-tooltip-header">
+        <span className="update-tooltip-version">v{version} Available</span>
+        <button className="update-tooltip-close" onClick={onClose}>✕</button>
+      </div>
+      {cleanNotes && (
+        <div className="update-tooltip-notes">{cleanNotes}</div>
+      )}
+      {!cleanNotes && (
+        <div className="update-tooltip-notes">A new version is available.</div>
+      )}
+      <button className="update-tooltip-btn" onClick={onUpdate}>
+        Download Update
+      </button>
+    </div>
+  )
+}
 
 function StatusBar() {
   const directories = useStore((s) => s.directories)
@@ -7,9 +42,11 @@ function StatusBar() {
   const broadcastMode = useStore((s) => s.broadcastMode)
   const toggleBroadcast = useStore((s) => s.toggleBroadcast)
   const [sysInfo, setSysInfo] = useState(null)
-  const [updateState, setUpdateState] = useState(null) // null | 'available' | 'downloading' | 'ready'
+  const [updateState, setUpdateState] = useState(null)
   const [updateVersion, setUpdateVersion] = useState('')
+  const [releaseNotes, setReleaseNotes] = useState('')
   const [downloadPercent, setDownloadPercent] = useState(0)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   const totalSessions = directories.reduce((sum, d) => sum + d.sessions.length, 0)
 
@@ -31,9 +68,11 @@ function StatusBar() {
 
   useEffect(() => {
     if (!window.electronAPI.update) return
-    window.electronAPI.update.onAvailable((version) => {
-      setUpdateVersion(version)
+    window.electronAPI.update.onAvailable((info) => {
+      setUpdateVersion(info.version)
+      setReleaseNotes(info.releaseNotes || '')
       setUpdateState('available')
+      setShowTooltip(true)
     })
     window.electronAPI.update.onProgress((percent) => {
       setDownloadPercent(percent)
@@ -46,6 +85,7 @@ function StatusBar() {
   const handleUpdate = () => {
     if (updateState === 'available') {
       setUpdateState('downloading')
+      setShowTooltip(false)
       window.electronAPI.update.download()
     } else if (updateState === 'ready') {
       window.electronAPI.update.install()
@@ -69,11 +109,24 @@ function StatusBar() {
       </div>
       <div className="status-right">
         {updateState && (
-          <button className="status-update-btn" onClick={handleUpdate}>
-            {updateState === 'available' && `v${updateVersion} Update`}
-            {updateState === 'downloading' && `Downloading ${downloadPercent}%`}
-            {updateState === 'ready' && 'Restart to update'}
-          </button>
+          <div className="status-update-wrapper">
+            {showTooltip && updateState === 'available' && (
+              <UpdateTooltip
+                version={updateVersion}
+                releaseNotes={releaseNotes}
+                onClose={() => setShowTooltip(false)}
+                onUpdate={handleUpdate}
+              />
+            )}
+            <button
+              className="status-update-btn"
+              onClick={updateState === 'available' ? () => setShowTooltip((p) => !p) : handleUpdate}
+            >
+              {updateState === 'available' && `v${updateVersion} Update`}
+              {updateState === 'downloading' && `Downloading ${downloadPercent}%`}
+              {updateState === 'ready' && 'Restart to update'}
+            </button>
+          </div>
         )}
         <button
           className={`status-broadcast-btn ${broadcastMode ? 'active' : ''}`}

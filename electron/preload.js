@@ -29,7 +29,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openInEditor: (params) => ipcRenderer.invoke('editor:open', params),
   getSystemInfo: () => ipcRenderer.invoke('system:info'),
   update: {
-    onAvailable: (cb) => ipcRenderer.on('update:available', (_, version) => cb(version)),
+    onAvailable: (cb) => ipcRenderer.on('update:available', (_, info) => cb(info)),
     onProgress: (cb) => ipcRenderer.on('update:progress', (_, percent) => cb(percent)),
     onDownloaded: (cb) => ipcRenderer.on('update:downloaded', () => cb()),
     download: () => ipcRenderer.invoke('update:download'),
