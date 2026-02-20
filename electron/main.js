@@ -38,17 +38,12 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow()
 
-  // Auto update (production only)
+  // Auto update check (production only)
   if (!isDev) {
     autoUpdater.autoDownload = false
-    autoUpdater.autoInstallOnAppQuit = true
     autoUpdater.checkForUpdates().catch(() => {})
 
-    autoUpdater.on('error', (err) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('update:error', err?.message || 'Update error')
-      }
-    })
+    autoUpdater.on('error', () => {})
 
     autoUpdater.on('update-available', (info) => {
       let notes = ''
@@ -59,26 +54,7 @@ app.whenReady().then(() => {
       }
       mainWindow.webContents.send('update:available', { version: info.version, releaseNotes: notes })
     })
-
-    autoUpdater.on('download-progress', (progress) => {
-      mainWindow.webContents.send('update:progress', Math.round(progress.percent))
-    })
-
-    autoUpdater.on('update-downloaded', () => {
-      mainWindow.webContents.send('update:downloaded')
-    })
   }
-
-  ipcMain.handle('update:download', () => {
-    autoUpdater.downloadUpdate()
-  })
-
-  ipcMain.handle('update:install', () => {
-    // Kill all PTY sessions before quitting
-    ptySessions.forEach((p) => { try { p.kill() } catch (e) {} })
-    ptySessions.clear()
-    autoUpdater.quitAndInstall(false, true)
-  })
 
   // PTY creation
   ipcMain.handle('pty:create', (event, { id, cwd }) => {

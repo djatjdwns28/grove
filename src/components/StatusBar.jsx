@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import useStore from '../store'
 
-function UpdateTooltip({ version, releaseNotes, onClose, onUpdate }) {
+function UpdateTooltip({ version, releaseNotes, onClose, onDownload }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -12,7 +12,6 @@ function UpdateTooltip({ version, releaseNotes, onClose, onUpdate }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [onClose])
 
-  // Strip HTML tags from release notes
   const cleanNotes = releaseNotes
     ? releaseNotes.replace(/<[^>]*>/g, '').trim()
     : ''
@@ -23,14 +22,11 @@ function UpdateTooltip({ version, releaseNotes, onClose, onUpdate }) {
         <span className="update-tooltip-version">v{version} Available</span>
         <button className="update-tooltip-close" onClick={onClose}>✕</button>
       </div>
-      {cleanNotes && (
-        <div className="update-tooltip-notes">{cleanNotes}</div>
-      )}
-      {!cleanNotes && (
-        <div className="update-tooltip-notes">A new version is available.</div>
-      )}
-      <button className="update-tooltip-btn" onClick={onUpdate}>
-        Download Update
+      <div className="update-tooltip-notes">
+        {cleanNotes || 'A new version is available.'}
+      </div>
+      <button className="update-tooltip-btn" onClick={onDownload}>
+        Download from GitHub
       </button>
     </div>
   )
@@ -42,10 +38,8 @@ function StatusBar() {
   const broadcastMode = useStore((s) => s.broadcastMode)
   const toggleBroadcast = useStore((s) => s.toggleBroadcast)
   const [sysInfo, setSysInfo] = useState(null)
-  const [updateState, setUpdateState] = useState(null)
   const [updateVersion, setUpdateVersion] = useState('')
   const [releaseNotes, setReleaseNotes] = useState('')
-  const [downloadPercent, setDownloadPercent] = useState(0)
   const [showTooltip, setShowTooltip] = useState(false)
 
   const totalSessions = directories.reduce((sum, d) => sum + d.sessions.length, 0)
@@ -71,29 +65,15 @@ function StatusBar() {
     window.electronAPI.update.onAvailable((info) => {
       setUpdateVersion(info.version)
       setReleaseNotes(info.releaseNotes || '')
-      setUpdateState('available')
       setShowTooltip(true)
-    })
-    window.electronAPI.update.onProgress((percent) => {
-      setDownloadPercent(percent)
-    })
-    window.electronAPI.update.onDownloaded(() => {
-      setUpdateState('ready')
-    })
-    window.electronAPI.update.onError?.((msg) => {
-      console.error('Update error:', msg)
-      setUpdateState('error')
     })
   }, [])
 
-  const handleUpdate = () => {
-    if (updateState === 'available') {
-      setUpdateState('downloading')
-      setShowTooltip(false)
-      window.electronAPI.update.download()
-    } else if (updateState === 'ready') {
-      window.electronAPI.update.install()
-    }
+  const handleDownload = () => {
+    window.electronAPI.openExternal(
+      `https://github.com/djatjdwns28/grove/releases/tag/v${updateVersion}`
+    )
+    setShowTooltip(false)
   }
 
   return (
@@ -112,24 +92,21 @@ function StatusBar() {
         )}
       </div>
       <div className="status-right">
-        {updateState && (
+        {updateVersion && (
           <div className="status-update-wrapper">
-            {showTooltip && updateState === 'available' && (
+            {showTooltip && (
               <UpdateTooltip
                 version={updateVersion}
                 releaseNotes={releaseNotes}
                 onClose={() => setShowTooltip(false)}
-                onUpdate={handleUpdate}
+                onDownload={handleDownload}
               />
             )}
             <button
               className="status-update-btn"
-              onClick={updateState === 'available' ? () => setShowTooltip((p) => !p) : handleUpdate}
+              onClick={() => setShowTooltip((p) => !p)}
             >
-              {updateState === 'available' && `v${updateVersion} Update`}
-              {updateState === 'downloading' && `Downloading ${downloadPercent}%`}
-              {updateState === 'ready' && 'Restart to update'}
-              {updateState === 'error' && 'Update failed'}
+              v{updateVersion} Update
             </button>
           </div>
         )}
