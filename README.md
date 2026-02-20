@@ -46,9 +46,12 @@ Or browse all files on the [Releases](https://github.com/djatjdwns28/grove/relea
 
 Since the app is not signed with an Apple Developer certificate, macOS will show a warning on first launch. To open it:
 
-1. Right-click (or Control-click) the app
-2. Click **Open**
-3. Click **Open** again in the dialog
+1. Try opening the app (the warning will appear)
+2. Go to **Apple menu → System Settings → Privacy & Security**
+3. Scroll down to the **Security** section
+4. Click **Open Anyway** (available for about 1 hour after the warning)
+5. Click **Open**
+6. Enter your login password and click **OK**
 
 You only need to do this once. After that, the app will open normally.
 
