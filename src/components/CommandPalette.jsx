@@ -88,20 +88,20 @@ function CommandPalette({ onClose, onAction }) {
         return
       }
 
-      const exists = branches.some((b) => b.name === branchName)
-      if (!exists) {
-        setBranchStatus({ error: `Branch "${branchName}" not found` })
+      const match = branches.find((b) => b.name === branchName)
+      if (!match) {
+        setBranchStatus({ error: `Branch "${branchName}" not found (local & remote)` })
         return
       }
 
-      setBranchStatus('creating')
+      setBranchStatus(match.remote ? 'creating-remote' : 'creating')
       const result = await window.electronAPI.addGitWorktree({
         repoPath: activeDir.path,
         branch: branchName,
       })
 
       if (result.success) {
-        const sessionId = addSession(activeDir.id, branchName, result.path)
+        addSession(activeDir.id, branchName, result.path)
         onClose()
       } else {
         setBranchStatus({ error: result.error || 'Failed to create worktree' })
@@ -173,6 +173,7 @@ function CommandPalette({ onClose, onAction }) {
               <span className="palette-desc">
                 {branchStatus === 'checking' && 'Checking branch...'}
                 {branchStatus === 'creating' && 'Creating worktree...'}
+                {branchStatus === 'creating-remote' && 'Creating worktree from remote...'}
                 {branchStatus?.error && <span className="palette-error">{branchStatus.error}</span>}
                 {!branchStatus && `Create worktree in ${activeDir.name}`}
               </span>

@@ -116,17 +116,31 @@ app.whenReady().then(() => {
     return result.canceled ? null : result.filePaths[0]
   })
 
-  // Get all local branches
+  // Get all branches (local + remote)
   ipcMain.handle('git:all-branches', (event, dirPath) => {
     try {
-      const output = execSync('git branch', { cwd: dirPath, encoding: 'utf8' })
-      const branches = output.split('\n')
+      // Fetch remote refs first
+      try { execSync('git fetch --prune', { cwd: dirPath, encoding: 'utf8', stdio: 'pipe', timeout: 10000 }) } catch {}
+
+      const localOutput = execSync('git branch', { cwd: dirPath, encoding: 'utf8' })
+      const localBranches = localOutput.split('\n')
         .map((b) => ({
-          name: b.replace(/^[\s*+]+/, '').trim(),  // Remove both * and + (+ = checked out in another worktree)
+          name: b.replace(/^[\s*+]+/, '').trim(),
           current: b.trim().startsWith('*'),
+          remote: false,
         }))
         .filter((b) => b.name)
-      return { branches, isGit: true }
+
+      const remoteOutput = execSync('git branch -r', { cwd: dirPath, encoding: 'utf8' })
+      const localNames = new Set(localBranches.map((b) => b.name))
+      const remoteBranches = remoteOutput.split('\n')
+        .map((b) => b.trim())
+        .filter((b) => b && !b.includes('->'))  // Exclude HEAD -> origin/main
+        .map((b) => b.replace(/^origin\//, ''))
+        .filter((name) => !localNames.has(name))
+        .map((name) => ({ name, current: false, remote: true }))
+
+      return { branches: [...localBranches, ...remoteBranches], isGit: true }
     } catch {
       return { branches: [], isGit: false }
     }
