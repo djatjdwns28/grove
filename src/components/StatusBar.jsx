@@ -80,6 +80,10 @@ function StatusBar() {
     window.electronAPI.update.onDownloaded(() => {
       setUpdateState('ready')
     })
+    window.electronAPI.update.onError?.((msg) => {
+      console.error('Update error:', msg)
+      setUpdateState('error')
+    })
   }, [])
 
   const handleUpdate = () => {
@@ -125,6 +129,7 @@ function StatusBar() {
               {updateState === 'available' && `v${updateVersion} Update`}
               {updateState === 'downloading' && `Downloading ${downloadPercent}%`}
               {updateState === 'ready' && 'Restart to update'}
+              {updateState === 'error' && 'Update failed'}
             </button>
           </div>
         )}

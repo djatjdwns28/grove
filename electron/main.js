@@ -41,7 +41,14 @@ app.whenReady().then(() => {
   // Auto update (production only)
   if (!isDev) {
     autoUpdater.autoDownload = false
-    autoUpdater.checkForUpdates()
+    autoUpdater.autoInstallOnAppQuit = true
+    autoUpdater.checkForUpdates().catch(() => {})
+
+    autoUpdater.on('error', (err) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update:error', err?.message || 'Update error')
+      }
+    })
 
     autoUpdater.on('update-available', (info) => {
       let notes = ''
@@ -67,7 +74,10 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('update:install', () => {
-    autoUpdater.quitAndInstall()
+    // Kill all PTY sessions before quitting
+    ptySessions.forEach((p) => { try { p.kill() } catch (e) {} })
+    ptySessions.clear()
+    autoUpdater.quitAndInstall(false, true)
   })
 
   // PTY creation
