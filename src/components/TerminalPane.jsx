@@ -19,7 +19,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
 
   const settings = useStore((s) => s.settings)
 
-  // 안전한 fit 호출: 컨테이너가 보이고 크기가 있을 때만
+  // Safe fit call: only when the container is visible and has dimensions
   const safeFit = () => {
     try {
       const el = containerRef.current
@@ -29,7 +29,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     } catch {}
   }
 
-  // xterm 초기화
+  // xterm initialization
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -59,7 +59,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     term.unicode.activeVersion = '11'
     term.open(containerRef.current)
 
-    // 파일 경로 클릭 → 에디터에서 열기 (file:line:col)
+    // Click file path -> open in editor (file:line:col)
     const filePathRegex = /((?:\/|\.\/|\.\.\/)?(?:[\w@.-]+\/)*[\w@.-]+\.[a-zA-Z]{1,5}):(\d+)(?::(\d+))?/g
     const codeExts = new Set(['js','jsx','ts','tsx','mjs','cjs','py','rb','go','rs','java','c','cpp','h','hpp','css','scss','less','html','vue','svelte','json','yaml','yml','toml','md','txt','sh','bash','zsh','swift','kt','php','ex','exs','lua','zig','ml','mli','tf','sql','graphql','gql','prisma','proto'])
 
@@ -97,7 +97,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     fitAddonRef.current = fitAddon
     searchAddonRef.current = searchAddon
 
-    // 초기 fit — 컨테이너가 렌더링된 후 실행
+    // Initial fit — run after the container has rendered
     requestAnimationFrame(() => safeFit())
 
     window.electronAPI.pty.create({ id: paneId, cwd }).then(() => {
@@ -106,17 +106,17 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       })
 
       window.electronAPI.pty.onExit(paneId, () => {
-        term.write('\r\n\x1b[2m[프로세스 종료]\x1b[0m\r\n')
+        term.write('\r\n\x1b[2m[Process exited]\x1b[0m\r\n')
         const currentActive = useStore.getState().activeSessionId
         if (currentActive !== sessionId) {
-          window.electronAPI.showNotification('명령 완료', '프로세스가 종료되었습니다')
+          window.electronAPI.showNotification('Command completed', 'Process has exited')
         }
       })
 
       term.onData((data) => {
         const state = useStore.getState()
         if (state.broadcastMode) {
-          // 브로드캐스트: 모든 세션의 모든 pane에 입력 전달
+          // Broadcast: forward input to all panes of all sessions
           const collectPaneIds = (node) => {
             if (!node) return []
             if (node.type === 'pane') return [node.id]
@@ -144,7 +144,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       term._cleanup = () => { removeData(); ro.disconnect() }
     })
 
-    // 클릭 시 포커스
+    // Focus on click
     term.onData(() => onFocus?.())
 
     return () => {
@@ -156,7 +156,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     }
   }, [paneId, cwd])
 
-  // 설정 변경
+  // Settings change
   useEffect(() => {
     const term = termRef.current
     if (!term) return
@@ -177,7 +177,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     })
   }, [settings, paneId])
 
-  // 보이게 되면 fit
+  // Fit when visible
   useEffect(() => {
     if (!isVisible) return
     requestAnimationFrame(() => {
@@ -190,7 +190,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     })
   }, [isVisible, paneId])
 
-  // 포커스 시 터미널에 focus
+  // Focus terminal when focused
   useEffect(() => {
     if (isFocused && isVisible) {
       setTimeout(() => termRef.current?.focus(), 50)
@@ -240,7 +240,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
           <input
             ref={searchInputRef}
             className="search-input"
-            placeholder="검색..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             onKeyDown={(e) => {

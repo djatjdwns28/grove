@@ -49,8 +49,8 @@ function RecentSessionsPicker({ onClose }) {
     return (
       <div className="recent-overlay" onClick={onClose}>
         <div className="recent-picker" ref={ref}>
-          <div className="recent-header">최근 닫힌 세션</div>
-          <div className="recent-empty">닫힌 세션이 없습니다</div>
+          <div className="recent-header">Recently closed sessions</div>
+          <div className="recent-empty">No closed sessions</div>
         </div>
       </div>
     )
@@ -59,7 +59,7 @@ function RecentSessionsPicker({ onClose }) {
   return (
     <div className="recent-overlay" onClick={onClose}>
       <div className="recent-picker" ref={ref} onClick={(e) => e.stopPropagation()}>
-        <div className="recent-header">최근 닫힌 세션</div>
+        <div className="recent-header">Recently closed sessions</div>
         <div className="recent-list">
           {recentlyClosed.map((item, idx) => (
             <div
@@ -73,7 +73,7 @@ function RecentSessionsPicker({ onClose }) {
             </div>
           ))}
         </div>
-        <div className="recent-hint">↑↓ 이동 · Enter 복원 · Esc 닫기</div>
+        <div className="recent-hint">↑↓ Navigate · Enter Restore · Esc Close</div>
       </div>
     </div>
   )
@@ -111,10 +111,10 @@ function calculateDividers(node, bounds = { x: 0, y: 0, w: 1, h: 1 }, path = [])
       ? { x: bounds.x + bounds.w * offset, y: bounds.y, w: bounds.w * size, h: bounds.h }
       : { x: bounds.x, y: bounds.y + bounds.h * offset, w: bounds.w, h: bounds.h * size }
 
-    // 자식 내부 디바이더 재귀
+    // Recursively get child dividers
     dividers.push(...calculateDividers(child, childBounds, [...path, i]))
 
-    // 이 노드의 디바이더 (마지막 자식 뒤에는 없음)
+    // This node's dividers (none after the last child)
     if (i < node.children.length - 1) {
       const divPos = offset + size
       dividers.push({
@@ -168,7 +168,7 @@ function WorkspaceDivider({ divider, mainRef }) {
       const newSizes = [...sizes]
       newSizes[index] = s1
       newSizes[index + 1] = s2
-      // 로컬 sizes도 업데이트해서 다음 mousemove에서 올바른 beforeSum 계산
+      // Also update local sizes for correct beforeSum calculation on next mousemove
       sizes[index] = s1
       sizes[index + 1] = s2
       updateWorkspaceSizes(path, newSizes)
@@ -235,7 +235,7 @@ function App() {
   const [mainDropZone, setMainDropZone] = useState(null)
   const mainRef = useRef(null)
 
-  // 드래그 끝나면 드롭존 초기화
+  // Reset drop zone when drag ends
   useEffect(() => {
     if (!draggingSessionId) setMainDropZone(null)
   }, [draggingSessionId])
@@ -287,7 +287,7 @@ function App() {
         setShowSettings(true)
         break
       case 'search':
-        // Cmd+F는 TerminalPane에서 직접 처리
+        // Cmd+F is handled directly by TerminalPane
         break
     }
   }, [removeSession, cloneSession, splitPane, toggleBroadcast])
@@ -339,7 +339,7 @@ function App() {
           <div className="empty-state">
             <div className="empty-hint">
               <span className="empty-arrow">←</span>
-              <span>디렉토리를 추가하고 세션을 시작하세요</span>
+              <span>Add a directory and start a session</span>
             </div>
           </div>
         )}
@@ -356,7 +356,7 @@ function App() {
           <WorkspaceDivider key={i} divider={div} mainRef={mainRef} />
         ))}
 
-        {/* 메인 영역 가장자리 드롭 존 (루트 레벨 분할) */}
+        {/* Main area edge drop zones (root level split) */}
         {draggingSessionId && (
           <>
             {['left', 'right', 'top', 'bottom'].map((zone) => (
@@ -380,7 +380,7 @@ function App() {
             ))}
             {mainDropZone && (
               <div className={`main-drop-indicator main-drop-${mainDropZone}`}>
-                <div className="drop-overlay-label">전체 분할</div>
+                <div className="drop-overlay-label">Full split</div>
               </div>
             )}
           </>

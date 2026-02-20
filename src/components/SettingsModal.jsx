@@ -4,10 +4,10 @@ import useStore from '../store'
 import { themeList, getThemeColors, getDefaultCustomColors } from '../themes'
 
 const colorFields = [
-  { key: 'background', label: '배경' },
-  { key: 'foreground', label: '전경' },
-  { key: 'cursor', label: '커서' },
-  { key: 'selectionBackground', label: '선택' },
+  { key: 'background', label: 'Background' },
+  { key: 'foreground', label: 'Foreground' },
+  { key: 'cursor', label: 'Cursor' },
+  { key: 'selectionBackground', label: 'Selection' },
   { key: 'black', label: 'Black' },
   { key: 'red', label: 'Red' },
   { key: 'green', label: 'Green' },
@@ -27,9 +27,9 @@ const colorFields = [
 ]
 
 const tabs = [
-  { key: 'terminal', label: '터미널' },
-  { key: 'theme', label: '테마' },
-  { key: 'snippets', label: '스니펫' },
+  { key: 'terminal', label: 'Terminal' },
+  { key: 'theme', label: 'Theme' },
+  { key: 'snippets', label: 'Snippets' },
 ]
 
 function SettingsModal({ onClose }) {
@@ -71,11 +71,11 @@ function SettingsModal({ onClose }) {
     <div className="settings-overlay" ref={overlayRef} onClick={handleOverlayClick}>
       <div className="settings-modal">
         <div className="settings-header">
-          <span className="settings-title">설정</span>
+          <span className="settings-title">Settings</span>
           <button className="icon-btn" onClick={onClose}>✕</button>
         </div>
 
-        {/* 탭 바 */}
+        {/* Tab bar */}
         <div className="settings-tabs">
           {tabs.map((tab) => (
             <button
@@ -90,20 +90,20 @@ function SettingsModal({ onClose }) {
 
         <div className="settings-body">
           <div className="settings-columns">
-            {/* 왼쪽: 설정 컨트롤 */}
+            {/* Left: Settings controls */}
             <div className="settings-left">
 
-              {/* 터미널 탭 */}
+              {/* Terminal tab */}
               {activeTab === 'terminal' && (
                 <div className="settings-section">
-                  <label className="settings-label">폰트</label>
+                  <label className="settings-label">Font</label>
                   <input
                     className="settings-input"
                     value={settings.fontFamily}
                     onChange={(e) => updateSettings({ fontFamily: e.target.value })}
                   />
 
-                  <label className="settings-label">폰트 크기 — {settings.fontSize}px</label>
+                  <label className="settings-label">Font Size — {settings.fontSize}px</label>
                   <input
                     type="range"
                     className="settings-slider"
@@ -114,7 +114,7 @@ function SettingsModal({ onClose }) {
                     onChange={(e) => updateSettings({ fontSize: Number(e.target.value) })}
                   />
 
-                  <label className="settings-label">줄 높이 — {settings.lineHeight}</label>
+                  <label className="settings-label">Line Height — {settings.lineHeight}</label>
                   <input
                     type="range"
                     className="settings-slider"
@@ -126,7 +126,7 @@ function SettingsModal({ onClose }) {
                   />
 
                   <div className="settings-row">
-                    <label className="settings-label" style={{ flex: 1, marginBottom: 0 }}>커서 깜빡임</label>
+                    <label className="settings-label" style={{ flex: 1, marginBottom: 0 }}>Cursor Blink</label>
                     <button
                       className={`settings-toggle ${settings.cursorBlink ? 'on' : ''}`}
                       onClick={() => updateSettings({ cursorBlink: !settings.cursorBlink })}
@@ -135,7 +135,7 @@ function SettingsModal({ onClose }) {
                     </button>
                   </div>
 
-                  <label className="settings-label">스크롤백</label>
+                  <label className="settings-label">Scrollback</label>
                   <input
                     type="number"
                     className="settings-input settings-input-narrow"
@@ -148,7 +148,7 @@ function SettingsModal({ onClose }) {
                 </div>
               )}
 
-              {/* 테마 탭 */}
+              {/* Theme tab */}
               {activeTab === 'theme' && (
                 <>
                   <div className="settings-section">
@@ -184,7 +184,7 @@ function SettingsModal({ onClose }) {
 
                   {settings.themeName === 'custom' && (
                     <div className="settings-section">
-                      <div className="settings-section-title">커스텀 컬러</div>
+                      <div className="settings-section-title">Custom Colors</div>
                       <div className="color-grid">
                         {colorFields.map((f) => (
                           <div key={f.key} className="color-field">
@@ -202,7 +202,7 @@ function SettingsModal({ onClose }) {
                 </>
               )}
 
-              {/* 스니펫 탭 */}
+              {/* Snippets tab */}
               {activeTab === 'snippets' && (
                 <div className="settings-section">
                   <div className="snippet-list">
@@ -210,7 +210,7 @@ function SettingsModal({ onClose }) {
                       <div key={snippet.id} className="snippet-item">
                         <input
                           className="settings-input snippet-label-input"
-                          placeholder="이름"
+                          placeholder="Name"
                           value={snippet.label}
                           onChange={(e) => {
                             const updated = settings.snippets.map((s) =>
@@ -221,7 +221,7 @@ function SettingsModal({ onClose }) {
                         />
                         <input
                           className="settings-input snippet-cmd-input"
-                          placeholder="명령어"
+                          placeholder="Command"
                           value={snippet.command}
                           onChange={(e) => {
                             const updated = settings.snippets.map((s) =>
@@ -245,19 +245,19 @@ function SettingsModal({ onClose }) {
                       const snippets = [...(settings.snippets || []), { id: uuidv4(), label: '', command: '' }]
                       updateSettings({ snippets })
                     }}
-                  >+ 스니펫 추가</button>
+                  >+ Add Snippet</button>
                   {(settings.snippets || []).length === 0 && (
-                    <div className="settings-empty-hint">등록된 스니펫이 없습니다</div>
+                    <div className="settings-empty-hint">No snippets registered</div>
                   )}
                 </div>
               )}
 
             </div>
 
-            {/* 오른쪽: 미리보기 (터미널/테마 탭에서만) */}
+            {/* Right: Preview (only in terminal/theme tabs) */}
             {showPreview && (
               <div className="settings-right">
-                <div className="settings-section-title">미리보기</div>
+                <div className="settings-section-title">Preview</div>
                 <div
                   className="settings-preview"
                   ref={previewRef}
@@ -306,8 +306,8 @@ function SettingsModal({ onClose }) {
         </div>
 
         <div className="settings-footer">
-          <button className="settings-btn reset" onClick={() => resetSettings()}>초기화</button>
-          <button className="settings-btn close" onClick={onClose}>닫기</button>
+          <button className="settings-btn reset" onClick={() => resetSettings()}>Reset</button>
+          <button className="settings-btn close" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>

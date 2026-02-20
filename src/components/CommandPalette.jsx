@@ -2,14 +2,14 @@ import React, { useState, useRef, useEffect } from 'react'
 import useStore from '../store'
 
 const commands = [
-  { id: 'new-session', label: '새 세션', desc: '현재 디렉토리에 새 세션 추가', icon: '+' },
-  { id: 'close-session', label: '세션 닫기', desc: '현재 활성 세션 닫기', icon: '×' },
-  { id: 'clone-session', label: '세션 복제', desc: '현재 세션을 같은 경로로 복제', icon: '⧉' },
-  { id: 'vsplit', label: '세로 분할', desc: '터미널을 세로로 분할 (Cmd+D)', icon: '▏' },
-  { id: 'hsplit', label: '가로 분할', desc: '터미널을 가로로 분할 (Cmd+Shift+D)', icon: '―' },
-  { id: 'broadcast', label: '브로드캐스트 토글', desc: '모든 터미널에 동시 입력', icon: '📡' },
-  { id: 'settings', label: '설정 열기', desc: '터미널 설정 변경', icon: '⚙' },
-  { id: 'search', label: '검색', desc: '터미널 내 텍스트 검색 (Cmd+F)', icon: '🔍' },
+  { id: 'new-session', label: 'New Session', desc: 'Add new session to current directory', icon: '+' },
+  { id: 'close-session', label: 'Close Session', desc: 'Close current active session', icon: '×' },
+  { id: 'clone-session', label: 'Clone Session', desc: 'Clone current session to the same path', icon: '⧉' },
+  { id: 'vsplit', label: 'Vertical Split', desc: 'Split terminal vertically (Cmd+D)', icon: '▏' },
+  { id: 'hsplit', label: 'Horizontal Split', desc: 'Split terminal horizontally (Cmd+Shift+D)', icon: '―' },
+  { id: 'broadcast', label: 'Toggle Broadcast', desc: 'Simultaneous input to all terminals', icon: '📡' },
+  { id: 'settings', label: 'Open Settings', desc: 'Change terminal settings', icon: '⚙' },
+  { id: 'search', label: 'Search', desc: 'Search text in terminal (Cmd+F)', icon: '🔍' },
 ]
 
 function CommandPalette({ onClose, onAction }) {
@@ -22,7 +22,7 @@ function CommandPalette({ onClose, onAction }) {
   const directories = useStore((s) => s.directories)
   const activeSessionId = useStore((s) => s.activeSessionId)
 
-  // 세션 목록도 검색 가능
+  // Session list is also searchable
   const allSessions = directories.flatMap((dir) =>
     dir.sessions.map((s) => ({
       id: `session:${s.id}`,
@@ -90,14 +90,14 @@ function CommandPalette({ onClose, onAction }) {
         <input
           ref={inputRef}
           className="palette-input"
-          placeholder="명령어 또는 세션 검색..."
+          placeholder="Search commands or sessions..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
         />
         <div className="palette-list" ref={listRef}>
           {filtered.length === 0 && (
-            <div className="palette-empty">결과 없음</div>
+            <div className="palette-empty">No results</div>
           )}
           {filtered.map((item, idx) => (
             <div
@@ -112,7 +112,7 @@ function CommandPalette({ onClose, onAction }) {
             </div>
           ))}
         </div>
-        <div className="palette-hint">↑↓ 이동 · Enter 실행 · Esc 닫기</div>
+        <div className="palette-hint">↑↓ Navigate · Enter Execute · Esc Close</div>
       </div>
     </div>
   )

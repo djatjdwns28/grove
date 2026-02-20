@@ -57,7 +57,7 @@ function StatusBar() {
       <div className="status-left">
         <span className="status-item">
           <span className="status-icon">⬡</span>
-          세션 {totalSessions}
+          Sessions {totalSessions}
         </span>
         {activeSession && (
           <span className="status-item status-active-session">
@@ -70,15 +70,15 @@ function StatusBar() {
       <div className="status-right">
         {updateState && (
           <button className="status-update-btn" onClick={handleUpdate}>
-            {updateState === 'available' && `v${updateVersion} 업데이트`}
-            {updateState === 'downloading' && `다운로드 중 ${downloadPercent}%`}
-            {updateState === 'ready' && '재시작하여 업데이트'}
+            {updateState === 'available' && `v${updateVersion} Update`}
+            {updateState === 'downloading' && `Downloading ${downloadPercent}%`}
+            {updateState === 'ready' && 'Restart to update'}
           </button>
         )}
         <button
           className={`status-broadcast-btn ${broadcastMode ? 'active' : ''}`}
           onClick={toggleBroadcast}
-          title="브로드캐스트 모드 (모든 터미널 동시 입력)"
+          title="Broadcast mode (simultaneous input to all terminals)"
         >
           {broadcastMode ? '📡 BROADCAST ON' : '📡'}
         </button>

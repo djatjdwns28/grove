@@ -38,7 +38,7 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow()
 
-  // 자동 업데이트 (프로덕션에서만)
+  // Auto update (production only)
   if (!isDev) {
     autoUpdater.autoDownload = false
     autoUpdater.checkForUpdates()
@@ -64,7 +64,7 @@ app.whenReady().then(() => {
     autoUpdater.quitAndInstall()
   })
 
-  // PTY 생성
+  // PTY creation
   ipcMain.handle('pty:create', (event, { id, cwd }) => {
     if (ptySessions.has(id)) return { success: true }
 
@@ -95,19 +95,19 @@ app.whenReady().then(() => {
     return { success: true }
   })
 
-  // PTY 입력
+  // PTY input
   ipcMain.on('pty:write', (event, { id, data }) => {
     const ptyProcess = ptySessions.get(id)
     if (ptyProcess) ptyProcess.write(data)
   })
 
-  // PTY 리사이즈
+  // PTY resize
   ipcMain.on('pty:resize', (event, { id, cols, rows }) => {
     const ptyProcess = ptySessions.get(id)
     if (ptyProcess) ptyProcess.resize(cols, rows)
   })
 
-  // PTY 종료
+  // PTY kill
   ipcMain.on('pty:kill', (event, { id }) => {
     const ptyProcess = ptySessions.get(id)
     if (ptyProcess) {
@@ -116,7 +116,7 @@ app.whenReady().then(() => {
     }
   })
 
-  // 디렉토리 선택 다이얼로그
+  // Directory selection dialog
   ipcMain.handle('dialog:open-directory', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openDirectory'],
@@ -124,13 +124,13 @@ app.whenReady().then(() => {
     return result.canceled ? null : result.filePaths[0]
   })
 
-  // 전체 로컬 브랜치 목록 조회
+  // Get all local branches
   ipcMain.handle('git:all-branches', (event, dirPath) => {
     try {
       const output = execSync('git branch', { cwd: dirPath, encoding: 'utf8' })
       const branches = output.split('\n')
         .map((b) => ({
-          name: b.replace(/^[\s*+]+/, '').trim(),  // *, + 모두 제거 (+ = 다른 워크트리에 체크아웃)
+          name: b.replace(/^[\s*+]+/, '').trim(),  // Remove both * and + (+ = checked out in another worktree)
           current: b.trim().startsWith('*'),
         }))
         .filter((b) => b.name)
@@ -140,7 +140,7 @@ app.whenReady().then(() => {
     }
   })
 
-  // 새 worktree 생성
+  // Create new worktree
   ipcMain.handle('git:add-worktree', (event, { repoPath, branch }) => {
     try {
       const repoName = path.basename(repoPath)
@@ -148,7 +148,7 @@ app.whenReady().then(() => {
       const parentDir = path.dirname(repoPath)
       let worktreePath = path.join(parentDir, `${repoName}-${safeBranch}`)
 
-      // 경로 충돌 시 숫자 suffix
+      // Numeric suffix on path conflict
       let i = 2
       while (fs.existsSync(worktreePath)) {
         worktreePath = path.join(parentDir, `${repoName}-${safeBranch}-${i++}`)
@@ -165,7 +165,7 @@ app.whenReady().then(() => {
     }
   })
 
-  // worktree 제거
+  // Remove worktree
   ipcMain.handle('git:remove-worktree', (event, { repoPath, worktreePath }) => {
     try {
       execSync(`git worktree remove "${worktreePath}" --force`, {
@@ -179,7 +179,7 @@ app.whenReady().then(() => {
     }
   })
 
-  // Git 상태 조회 (기능 3)
+  // Git status query (Feature 3)
   ipcMain.handle('git:status', (event, dirPath) => {
     try {
       const output = execSync('git status --porcelain --branch', {
@@ -202,7 +202,7 @@ app.whenReady().then(() => {
     }
   })
 
-  // 알림 표시 (기능 4)
+  // Show notification (Feature 4)
   ipcMain.handle('notification:show', (event, { title, body }) => {
     if (Notification.isSupported()) {
       new Notification({ title, body }).show()
@@ -210,13 +210,13 @@ app.whenReady().then(() => {
     return { success: true }
   })
 
-  // URL 열기 (외부 브라우저)
+  // Open URL (external browser)
   ipcMain.handle('shell:open-external', (event, url) => {
     shell.openExternal(url)
     return { success: true }
   })
 
-  // 시스템 정보 (상태 바용)
+  // System info (for status bar)
   ipcMain.handle('system:info', () => {
     const totalMem = os.totalmem()
     const freeMem = os.freemem()
@@ -232,7 +232,7 @@ app.whenReady().then(() => {
     }
   })
 
-  // 파일을 에디터에서 열기 (file:line:col)
+  // Open file in editor (file:line:col)
   ipcMain.handle('editor:open', (event, { filePath: fp, line, col, cwd }) => {
     const resolved = path.isAbsolute(fp) ? fp : path.resolve(cwd || os.homedir(), fp)
     if (!fs.existsSync(resolved)) return { success: false, error: 'File not found' }
@@ -242,7 +242,7 @@ app.whenReady().then(() => {
     return { success: true }
   })
 
-  // Git 브랜치 조회
+  // Get Git branches
   ipcMain.handle('git:branches', (event, dirPath) => {
     try {
       const branchOutput = execSync('git branch', { cwd: dirPath, encoding: 'utf8' })
@@ -262,12 +262,12 @@ app.whenReady().then(() => {
     }
   })
 
-  // Git 워크트리 목록 조회
+  // Get Git worktree list
   ipcMain.handle('git:worktrees', (event, dirPath) => {
     try {
       const output = execSync('git worktree list --porcelain', { cwd: dirPath, encoding: 'utf8' })
       const worktrees = []
-      // 각 워크트리 블록은 빈 줄로 구분
+      // Each worktree block is separated by blank lines
       for (const block of output.trim().split(/\n\n+/)) {
         const wt = {}
         for (const line of block.trim().split('\n')) {

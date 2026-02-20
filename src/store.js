@@ -68,7 +68,7 @@ const useStore = create(
         return id
       },
 
-      // 분할 관련
+      // Split related
       splitPane: (sessionId, paneId, direction) => {
         const newPaneId = uuidv4()
         const insertSplit = (node) => {
@@ -218,7 +218,7 @@ const useStore = create(
           ),
         })),
 
-      // 기능 2: 세션 이름 변경
+      // Feature 2: Rename session
       updateSessionName: (dirId, sessionId, newName) =>
         set((s) => ({
           directories: s.directories.map((d) =>
@@ -230,7 +230,7 @@ const useStore = create(
           ),
         })),
 
-      // 기능 3: Git 상태 업데이트
+      // Feature 3: Git status update
       updateSessionGitStatus: (sessionId, gitStatus) =>
         set((s) => ({
           directories: s.directories.map((d) => ({
@@ -241,7 +241,7 @@ const useStore = create(
           })),
         })),
 
-      // 기능 6: 세션 순서 변경
+      // Feature 6: Reorder sessions
       reorderSessions: (dirId, fromIdx, toIdx) =>
         set((s) => ({
           directories: s.directories.map((d) => {
@@ -253,7 +253,7 @@ const useStore = create(
           }),
         })),
 
-      // 기능 6: 디렉토리 순서 변경
+      // Feature 6: Reorder directories
       reorderDirectories: (fromIdx, toIdx) =>
         set((s) => {
           const dirs = [...s.directories]
@@ -262,18 +262,18 @@ const useStore = create(
           return { directories: dirs }
         }),
 
-      // 브로드캐스트 모드
+      // Broadcast mode
       broadcastMode: false,
       toggleBroadcast: () => set((s) => ({ broadcastMode: !s.broadcastMode })),
 
-      // 세션 복제
+      // Clone session
       cloneSession: (dirId, sessionId) => {
         const state = get()
         const dir = state.directories.find((d) => d.id === dirId)
         const session = dir?.sessions.find((s) => s.id === sessionId)
         if (!session) return null
         const id = uuidv4()
-        const name = session.name + ' (복사)'
+        const name = session.name + ' (copy)'
         set((s) => ({
           directories: s.directories.map((d) =>
             d.id === dirId ? { ...d, sessions: [...d.sessions, {
@@ -287,7 +287,7 @@ const useStore = create(
         return id
       },
 
-      // 워크스페이스 분할 (다중 세션 동시 보기)
+      // Workspace split (view multiple sessions simultaneously)
       workspaceLayout: null,
       draggingSessionId: null,
       setDraggingSessionId: (id) => set({ draggingSessionId: id }),
@@ -364,7 +364,7 @@ const useStore = create(
             : null,
         })),
 
-      // 워크스페이스 루트 레벨에 세션 추가 (기존 레이아웃 전체를 한쪽으로)
+      // Add session to workspace root level (push entire existing layout to one side)
       addSessionToWorkspaceRoot: (newSessionId, zone) => {
         const state = get()
         const direction = (zone === 'left' || zone === 'right') ? 'vsplit' : 'hsplit'
@@ -389,8 +389,8 @@ const useStore = create(
       },
     }),
     {
-      name: 'worktree-terminal',
-      // 기능 8: 세션 포함 저장 (자동 복원)
+      name: 'grove',
+      // Feature 8: Save sessions (auto restore)
       partialize: (s) => ({
         directories: s.directories.map((d) => ({
           ...d,

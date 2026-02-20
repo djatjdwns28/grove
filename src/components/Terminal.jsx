@@ -128,7 +128,7 @@ function Terminal({ session, isActive, isVisible, bounds }) {
 
   const showDragCapture = vis && draggingSessionId && draggingSessionId !== session.id
 
-  // Cmd+D / Cmd+Shift+D 분할
+  // Cmd+D / Cmd+Shift+D split
   const handleKeyDown = useCallback((e) => {
     if (!isActive || !e.metaKey) return
     if (e.key === 'd') {
@@ -239,7 +239,7 @@ function Terminal({ session, isActive, isVisible, bounds }) {
           <button
             className={`broadcast-toggle-btn ${broadcastMode ? 'active' : ''}`}
             onClick={toggleBroadcast}
-            title="브로드캐스트 모드 (모든 터미널 동시 입력)"
+            title="Broadcast mode (simultaneous input to all terminals)"
           >
             📡{broadcastMode ? ' ON' : ''}
           </button>
@@ -260,7 +260,7 @@ function Terminal({ session, isActive, isVisible, bounds }) {
           {bounds && (
             <button
               className="workspace-close-btn"
-              title="워크스페이스에서 제거"
+              title="Remove from workspace"
               onClick={(e) => {
                 e.stopPropagation()
                 useStore.getState().removeSessionFromWorkspace(session.id)
@@ -283,7 +283,7 @@ function Terminal({ session, isActive, isVisible, bounds }) {
         >
           {dropZone && (
             <div className={`drop-overlay drop-${dropZone}`}>
-              <div className="drop-overlay-label">여기에 놓기</div>
+              <div className="drop-overlay-label">Drop here</div>
             </div>
           )}
         </div>

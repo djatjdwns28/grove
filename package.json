@@ -1,5 +1,5 @@
 {
-  "name": "worktree-terminal",
+  "name": "grove",
   "version": "0.1.0",
   "description": "Multi-directory worktree terminal manager",
   "main": "electron/main.js",
@@ -11,8 +11,8 @@
     "release": "vite build && electron-builder --publish always"
   },
   "build": {
-    "appId": "com.djatjdwns28.worktree-terminal",
-    "productName": "Worktree Terminal",
+    "appId": "com.djatjdwns28.grove",
+    "productName": "Grove",
     "files": [
       "dist/**/*",
       "electron/**/*",
@@ -35,7 +35,7 @@
     "publish": {
       "provider": "github",
       "owner": "djatjdwns28",
-      "repo": "worktree-terminal"
+      "repo": "grove"
     }
   },
   "dependencies": {

@@ -33,9 +33,9 @@ function BranchPicker({ branches, worktrees, pos, onSelect, onClose, creating })
       <div key={b.name} className="wt-picker-item" onClick={() => onSelect(b)}>
         <span className="wt-branch">{b.name}</span>
         {wt ? (
-          <span className="wt-badge has-wt" title={wt.path}>기존 워크트리</span>
+          <span className="wt-badge has-wt" title={wt.path}>Existing worktree</span>
         ) : (
-          <span className="wt-badge no-wt">+ 워크트리 생성</span>
+          <span className="wt-badge no-wt">+ Create worktree</span>
         )}
       </div>
     )
@@ -48,11 +48,11 @@ function BranchPicker({ branches, worktrees, pos, onSelect, onClose, creating })
       style={{ position: 'fixed', top: pos.bottom + 4, left: pos.left }}
     >
       <div className="wt-picker-header">
-        <span className="wt-picker-title">브랜치 선택</span>
+        <span className="wt-picker-title">Select Branch</span>
         <input
           ref={searchRef}
           className="wt-picker-search"
-          placeholder="검색..."
+          placeholder="Search..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onClick={(e) => e.stopPropagation()}
@@ -60,23 +60,23 @@ function BranchPicker({ branches, worktrees, pos, onSelect, onClose, creating })
       </div>
 
       {creating ? (
-        <div className="wt-picker-loading">워크트리 생성 중...</div>
+        <div className="wt-picker-loading">Creating worktree...</div>
       ) : (
         <div className="wt-picker-list">
           {filtered.length === 0 ? (
-            <div className="wt-picker-empty">검색 결과 없음</div>
+            <div className="wt-picker-empty">No results</div>
           ) : (
             <>
               {withWorktree.length > 0 && (
                 <>
-                  <div className="wt-picker-section">열린 워크트리</div>
+                  <div className="wt-picker-section">Open worktrees</div>
                   {withWorktree.map(renderItem)}
                   {withoutWorktree.length > 0 && <div className="wt-picker-divider" />}
                 </>
               )}
               {withoutWorktree.length > 0 && (
                 <>
-                  {withWorktree.length > 0 && <div className="wt-picker-section">브랜치</div>}
+                  {withWorktree.length > 0 && <div className="wt-picker-section">Branches</div>}
                   {withoutWorktree.map(renderItem)}
                 </>
               )}
@@ -162,10 +162,10 @@ function Sidebar({ onOpenSettings }) {
   const handleDeleteWorktree = async (e, dir, session) => {
     e.stopPropagation()
     if (session.cwd === dir.path) {
-      alert('메인 워크트리는 삭제할 수 없습니다.')
+      alert('Cannot delete main worktree.')
       return
     }
-    const ok = confirm(`워크트리를 삭제할까요?\n${session.cwd}`)
+    const ok = confirm(`Delete worktree?\n${session.cwd}`)
     if (!ok) return
 
     removeSession(dir.id, session.id)
@@ -174,7 +174,7 @@ function Sidebar({ onOpenSettings }) {
       worktreePath: session.cwd,
     })
     if (!result.success) {
-      alert(`워크트리 삭제 실패:\n${result.error}`)
+      alert(`Worktree deletion failed:\n${result.error}`)
     }
   }
 
@@ -196,7 +196,7 @@ function Sidebar({ onOpenSettings }) {
       setCreatingWorktree(null)
 
       if (!result.success) {
-        alert(`워크트리 생성 실패:\n${result.error}`)
+        alert(`Worktree creation failed:\n${result.error}`)
         setPickerState(null)
         return
       }
@@ -211,7 +211,7 @@ function Sidebar({ onOpenSettings }) {
     setPickerState(null)
   }
 
-  // 기능 2: 세션 이름 변경
+  // Feature 2: Rename session
   const handleDoubleClick = (e, dirId, session) => {
     e.stopPropagation()
     setEditingSession({ dirId, sessionId: session.id })
@@ -225,7 +225,7 @@ function Sidebar({ onOpenSettings }) {
     setEditingSession(null)
   }
 
-  // 기능 6: 세션 드래그
+  // Feature 6: Session drag
   const handleSessionDragStart = (e, dirId, idx, sessionId) => {
     setDragSession({ dirId, idx })
     e.dataTransfer.effectAllowed = 'move'
@@ -255,7 +255,7 @@ function Sidebar({ onOpenSettings }) {
     setDragSession(null)
   }
 
-  // 기능 6: 디렉토리 드래그
+  // Feature 6: Directory drag
   const handleDirDragStart = (e, idx) => {
     setDragDir(idx)
     e.dataTransfer.effectAllowed = 'move'
@@ -309,12 +309,12 @@ function Sidebar({ onOpenSettings }) {
               <div className="row-actions">
                 <button
                   className="icon-btn"
-                  title="새 세션 추가"
+                  title="Add new session"
                   onClick={(e) => handleAddSession(e, dir)}
                 >+</button>
                 <button
                   className="icon-btn danger"
-                  title="디렉토리 제거"
+                  title="Remove directory"
                   onClick={(e) => { e.stopPropagation(); removeDirectory(dir.id) }}
                 >×</button>
               </div>
@@ -358,22 +358,22 @@ function Sidebar({ onOpenSettings }) {
                     )}
                     <button
                       className="icon-btn clone-btn"
-                      title="세션 복제"
+                      title="Clone session"
                       onClick={(e) => { e.stopPropagation(); cloneSession(dir.id, session.id) }}
                     >⧉</button>
                     <button
                       className="wt-delete-btn"
                       onClick={(e) => handleDeleteWorktree(e, dir, session)}
-                    >삭제</button>
+                    >Delete</button>
                     <button
                       className="icon-btn danger"
-                      title="세션 제거"
+                      title="Remove session"
                       onClick={(e) => { e.stopPropagation(); removeSession(dir.id, session.id) }}
                     >×</button>
                   </div>
                 ))}
                 {dir.sessions.length === 0 && (
-                  <div className="no-sessions">세션 없음 — + 클릭해서 추가</div>
+                  <div className="no-sessions">No sessions — click + to add</div>
                 )}
               </div>
             )}
@@ -384,9 +384,9 @@ function Sidebar({ onOpenSettings }) {
       <div className="sidebar-footer">
         <div className="sidebar-footer-row">
           <button className="add-dir-btn" onClick={handleAddDirectory}>
-            + 디렉토리 추가
+            + Add Directory
           </button>
-          <button className="settings-gear-btn" title="설정" onClick={onOpenSettings}>
+          <button className="settings-gear-btn" title="Settings" onClick={onOpenSettings}>
             ⚙
           </button>
         </div>

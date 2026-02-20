@@ -59,7 +59,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   border-bottom: 1px solid #313244;
-  /* macOS traffic light 영역 확보 */
+  /* Reserve space for macOS traffic lights */
   padding-top: 44px;
   -webkit-app-region: drag;
 }
@@ -166,7 +166,7 @@
   text-overflow: ellipsis;
 }
 
-/* 기능 2: 세션 이름 변경 */
+/* Feature 2: Rename session */
 .session-rename-input {
   flex: 1;
   background: #1e1e2e;
@@ -179,7 +179,7 @@
   min-width: 0;
 }
 
-/* 기능 3: Git 상태 뱃지 (사이드바) */
+/* Feature 3: Git status badge (sidebar) */
 .session-git-badge {
   font-size: 9px;
   background: rgba(249, 226, 175, 0.15);
@@ -189,7 +189,7 @@
   flex-shrink: 0;
 }
 
-/* 기능 6: 드래그 앤 드롭 */
+/* Feature 6: Drag and drop */
 .session-row.drag-over { border-top: 2px solid #89b4fa; }
 .dir-block.drag-over > .dir-row { border-top: 2px solid #89b4fa; }
 
@@ -317,7 +317,7 @@
   color: #45475a;
 }
 
-/* 6개 아이템 높이로 고정, 나머지 스크롤 */
+/* Fixed height for 6 items, scroll the rest */
 .wt-picker-list {
   overflow-y: auto;
   max-height: calc(6 * 34px);
@@ -447,7 +447,7 @@
   text-overflow: ellipsis;
 }
 
-/* 기능 3: Git 상태 (터미널 헤더) */
+/* Feature 3: Git status (terminal header) */
 .terminal-git-status {
   display: flex;
   align-items: center;
@@ -480,7 +480,7 @@
   color: #f38ba8;
 }
 
-/* 기능 5: 검색 바 */
+/* Feature 5: Search bar */
 .search-bar {
   display: flex;
   align-items: center;
@@ -524,7 +524,7 @@
   color: #cdd6f4;
 }
 
-/* 기능 7: 스니펫 바 */
+/* Feature 7: Snippets bar */
 .snippets-bar {
   display: flex;
   gap: 4px;
@@ -608,7 +608,7 @@
   background: #89b4fa !important;
 }
 
-/* 워크스페이스 디바이더 (절대 위치) */
+/* Workspace divider (absolute position) */
 .ws-divider {
   background: transparent;
   transition: background 0.1s;
@@ -1091,7 +1091,7 @@
   background: rgba(137, 180, 250, 0.06);
 }
 
-/* 기능 7: 스니펫 설정 */
+/* Feature 7: Snippet settings */
 .snippet-list {
   display: flex;
   flex-direction: column;
@@ -1215,7 +1215,7 @@
   bottom: 4px; left: 4px; right: 4px; height: calc(50% - 6px);
 }
 
-/* ─── Main Edge Drop Zones (루트 레벨 분할) ──── */
+/* ─── Main Edge Drop Zones (root level split) ──── */
 .main-edge {
   position: absolute;
   z-index: 60;
