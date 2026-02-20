@@ -15,9 +15,7 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            args: --mac --arm64
-          - os: macos-13
-            args: --mac --x64
+            args: --mac --arm64 --x64
           - os: windows-latest
             args: --win
           - os: ubuntu-latest
