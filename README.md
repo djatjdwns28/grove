@@ -1,5 +1,7 @@
 # Grove
 
+**[English](README.md)** | **[한국어](README_ko.md)**
+
 A terminal manager built for git worktree workflows. Run multiple terminals across different worktrees side by side.
 
 ## Features
