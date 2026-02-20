@@ -42,6 +42,16 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 
 Or browse all files on the [Releases](https://github.com/djatjdwns28/grove/releases/latest) page.
 
+### macOS — "Apple cannot check for malicious software" warning
+
+Since the app is not signed with an Apple Developer certificate, macOS will show a warning on first launch. To open it:
+
+1. Right-click (or Control-click) the app
+2. Click **Open**
+3. Click **Open** again in the dialog
+
+You only need to do this once. After that, the app will open normally.
+
 ## Development
 
 ```bash
