@@ -15,14 +15,19 @@ const commands = [
 function CommandPalette({ onClose, onAction }) {
   const [query, setQuery] = useState('')
   const [selectedIdx, setSelectedIdx] = useState(0)
+  const [branchStatus, setBranchStatus] = useState(null) // null | 'checking' | 'creating' | { error: string }
   const inputRef = useRef(null)
   const listRef = useRef(null)
   const overlayRef = useRef(null)
 
   const directories = useStore((s) => s.directories)
   const activeSessionId = useStore((s) => s.activeSessionId)
+  const addSession = useStore((s) => s.addSession)
 
-  // Session list is also searchable
+  const activeDir = directories.find((d) =>
+    d.sessions.some((s) => s.id === activeSessionId)
+  )
+
   const allSessions = directories.flatMap((dir) =>
     dir.sessions.map((s) => ({
       id: `session:${s.id}`,
@@ -42,12 +47,18 @@ function CommandPalette({ onClose, onAction }) {
       )
     : allItems
 
+  const showBranchOption = query.trim() && filtered.length === 0 && activeDir
+
+  // Total selectable items count
+  const totalItems = filtered.length + (showBranchOption ? 1 : 0)
+
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
 
   useEffect(() => {
     setSelectedIdx(0)
+    setBranchStatus(null)
   }, [query])
 
   useEffect(() => {
@@ -64,18 +75,58 @@ function CommandPalette({ onClose, onAction }) {
     }
   }
 
+  const handleBranchCheckout = async () => {
+    if (!activeDir || !query.trim()) return
+    const branchName = query.trim()
+
+    setBranchStatus('checking')
+
+    try {
+      const { branches, isGit } = await window.electronAPI.getAllBranches(activeDir.path)
+      if (!isGit) {
+        setBranchStatus({ error: 'Not a git repository' })
+        return
+      }
+
+      const exists = branches.some((b) => b.name === branchName)
+      if (!exists) {
+        setBranchStatus({ error: `Branch "${branchName}" not found` })
+        return
+      }
+
+      setBranchStatus('creating')
+      const result = await window.electronAPI.addGitWorktree({
+        repoPath: activeDir.path,
+        branch: branchName,
+      })
+
+      if (result.success) {
+        const sessionId = addSession(activeDir.id, branchName, result.path)
+        onClose()
+      } else {
+        setBranchStatus({ error: result.error || 'Failed to create worktree' })
+      }
+    } catch (e) {
+      setBranchStatus({ error: e.message || 'Unknown error' })
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSelectedIdx((i) => Math.min(i + 1, filtered.length - 1))
+      setSelectedIdx((i) => Math.min(i + 1, totalItems - 1))
     }
     if (e.key === 'ArrowUp') {
       e.preventDefault()
       setSelectedIdx((i) => Math.max(i - 1, 0))
     }
-    if (e.key === 'Enter' && filtered.length > 0) {
+    if (e.key === 'Enter') {
       e.preventDefault()
-      handleSelect(filtered[selectedIdx])
+      if (filtered.length > 0 && selectedIdx < filtered.length) {
+        handleSelect(filtered[selectedIdx])
+      } else if (showBranchOption && selectedIdx === filtered.length) {
+        handleBranchCheckout()
+      }
     }
     if (e.key === 'Escape') onClose()
   }
@@ -90,15 +141,12 @@ function CommandPalette({ onClose, onAction }) {
         <input
           ref={inputRef}
           className="palette-input"
-          placeholder="Search commands or sessions..."
+          placeholder="Search commands, sessions, or branch name..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
         />
         <div className="palette-list" ref={listRef}>
-          {filtered.length === 0 && (
-            <div className="palette-empty">No results</div>
-          )}
           {filtered.map((item, idx) => (
             <div
               key={item.id}
@@ -111,6 +159,29 @@ function CommandPalette({ onClose, onAction }) {
               <span className="palette-desc">{item.desc}</span>
             </div>
           ))}
+
+          {showBranchOption && (
+            <div
+              className={`palette-item palette-branch-item ${selectedIdx === filtered.length ? 'selected' : ''}`}
+              onClick={handleBranchCheckout}
+              onMouseEnter={() => setSelectedIdx(filtered.length)}
+            >
+              <span className="palette-icon">🌿</span>
+              <span className="palette-label">
+                Checkout: <strong>{query.trim()}</strong>
+              </span>
+              <span className="palette-desc">
+                {branchStatus === 'checking' && 'Checking branch...'}
+                {branchStatus === 'creating' && 'Creating worktree...'}
+                {branchStatus?.error && <span className="palette-error">{branchStatus.error}</span>}
+                {!branchStatus && `Create worktree in ${activeDir.name}`}
+              </span>
+            </div>
+          )}
+
+          {!showBranchOption && filtered.length === 0 && (
+            <div className="palette-empty">No results</div>
+          )}
         </div>
         <div className="palette-hint">↑↓ Navigate · Enter Execute · Esc Close</div>
       </div>

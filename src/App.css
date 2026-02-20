@@ -1371,6 +1371,14 @@
   text-align: center;
 }
 
+.palette-branch-item .palette-label strong {
+  color: #a6e3a1;
+}
+
+.palette-error {
+  color: #f38ba8;
+}
+
 .palette-hint {
   font-size: 10px;
   color: #45475a;
