@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Notification, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Notification, shell, Menu } = require('electron')
 const path = require('path')
 const os = require('os')
 const fs = require('fs')
@@ -19,7 +19,7 @@ function createWindow() {
     minWidth: 700,
     minHeight: 400,
     titleBarStyle: 'hiddenInset',
-    backgroundColor: '#1e1e2e',
+    backgroundColor: '#1e1e2e',  // Initial color; CSS variables handle theming
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -57,34 +57,38 @@ app.whenReady().then(() => {
   }
 
   // PTY creation
-  ipcMain.handle('pty:create', (event, { id, cwd }) => {
+  ipcMain.handle('pty:create', (event, { id, cwd, shell: customShell }) => {
     if (ptySessions.has(id)) return { success: true }
 
-    const shell = process.env.SHELL || (os.platform() === 'win32' ? 'powershell.exe' : '/bin/zsh')
+    try {
+      const shell = customShell || process.env.SHELL || (os.platform() === 'win32' ? 'powershell.exe' : '/bin/zsh')
 
-    const ptyProcess = pty.spawn(shell, ['--login'], {
-      name: 'xterm-256color',
-      cols: 80,
-      rows: 24,
-      cwd: cwd || os.homedir(),
-      env: { ...process.env, TERM: 'xterm-256color', CLAUDECODE: '' },
-    })
+      const ptyProcess = pty.spawn(shell, ['--login'], {
+        name: 'xterm-256color',
+        cols: 80,
+        rows: 24,
+        cwd: cwd || os.homedir(),
+        env: { ...process.env, TERM: 'xterm-256color', CLAUDECODE: '' },
+      })
 
-    ptyProcess.onData((data) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(`pty:data:${id}`, data)
-      }
-    })
+      ptyProcess.onData((data) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send(`pty:data:${id}`, data)
+        }
+      })
 
-    ptyProcess.onExit(() => {
-      ptySessions.delete(id)
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(`pty:exit:${id}`)
-      }
-    })
+      ptyProcess.onExit(() => {
+        ptySessions.delete(id)
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send(`pty:exit:${id}`)
+        }
+      })
 
-    ptySessions.set(id, ptyProcess)
-    return { success: true }
+      ptySessions.set(id, ptyProcess)
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
   })
 
   // PTY input
@@ -214,6 +218,24 @@ app.whenReady().then(() => {
       new Notification({ title, body }).show()
     }
     return { success: true }
+  })
+
+  // Terminal context menu (right-click)
+  ipcMain.handle('context-menu:show', (event, { hasSelection }) => {
+    return new Promise((resolve) => {
+      const template = [
+        { label: 'Copy', enabled: hasSelection, click: () => resolve('copy') },
+        { label: 'Paste', click: () => resolve('paste') },
+        { type: 'separator' },
+        { label: 'Clear', click: () => resolve('clear') },
+        { type: 'separator' },
+        { label: 'Split Vertical', click: () => resolve('vsplit') },
+        { label: 'Split Horizontal', click: () => resolve('hsplit') },
+      ]
+      const menu = Menu.buildFromTemplate(template)
+      menu.popup({ window: mainWindow })
+      menu.once('menu-will-close', () => setTimeout(() => resolve(null), 100))
+    })
   })
 
   // Open URL (external browser)

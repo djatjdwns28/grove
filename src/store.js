@@ -13,6 +13,7 @@ const defaultSettings = {
   snippets: [],
   notifyOnComplete: true,
   notifyIdleSeconds: 3,
+  defaultShell: '',
 }
 
 const updateNodeSizes = (node, path, sizes) => {

@@ -19,7 +19,10 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 - **Session Clone** — Duplicate any session with one click
 - **Drag & Drop Reorder** — Rearrange sessions and directories by dragging
 - **Snippets** — Save and run frequently used commands
-- **Customizable** — Fonts, themes (Catppuccin, Dracula, Nord, etc.), and more
+- **Customizable** — Fonts, themes (Catppuccin, Dracula, Nord, etc.), shell selection, and more
+- **Context Menu** — Right-click for copy, paste, split, and clear
+- **File Drop** — Drag files into terminal to insert paths
+- **Command Notification** — Get notified when long-running commands finish
 - **Session Restore** — Sessions persist across app restarts
 - **Auto Updates** — Get notified when a new version is available
 
@@ -32,15 +35,16 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 | `Cmd+W` | Close current session |
 | `Cmd+F` | Search in terminal |
 | `Cmd+1-9` | Switch to nth session |
+| `Cmd+Shift+[` / `]` | Previous / Next session |
 
 ## Download
 
 | OS | Architecture | Download |
 |----|-------------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.2.3-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3-arm64.dmg) |
-| macOS | Intel | [Grove-0.2.3.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3.dmg) |
-| Windows | x64 | [Grove-Setup-0.2.3.exe](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-Setup-0.2.3.exe) |
-| Linux | x64 | [Grove-0.2.3.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3.AppImage) |
+| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.3.0-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.3.0/Grove-0.3.0-arm64.dmg) |
+| macOS | Intel | [Grove-0.3.0.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.3.0/Grove-0.3.0.dmg) |
+| Windows | x64 | [Grove-Setup-0.3.0.exe](https://github.com/djatjdwns28/grove/releases/download/v0.3.0/Grove-Setup-0.3.0.exe) |
+| Linux | x64 | [Grove-0.3.0.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.3.0/Grove-0.3.0.AppImage) |
 
 Or browse all files on the [Releases](https://github.com/djatjdwns28/grove/releases/latest) page.
 

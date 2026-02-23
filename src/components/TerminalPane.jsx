@@ -100,7 +100,12 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     // Initial fit — run after the container has rendered
     requestAnimationFrame(() => safeFit())
 
-    window.electronAPI.pty.create({ id: paneId, cwd }).then(() => {
+    const shellPath = useStore.getState().settings.defaultShell || undefined
+    window.electronAPI.pty.create({ id: paneId, cwd, shell: shellPath }).then((result) => {
+      if (result && !result.success) {
+        term.write(`\r\n\x1b[31m[Error] Failed to create terminal: ${result.error || 'Unknown error'}\x1b[0m\r\n`)
+        return
+      }
       let busySince = null
       let idleTimer = null
 
@@ -171,6 +176,25 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       ro.observe(containerRef.current)
 
       term._cleanup = () => { removeData(); ro.disconnect(); clearTimeout(idleTimer) }
+    })
+
+    // Right-click context menu
+    term.element?.addEventListener('contextmenu', async (e) => {
+      e.preventDefault()
+      const hasSelection = term.hasSelection()
+      const action = await window.electronAPI.showContextMenu({ hasSelection })
+      if (action === 'copy' && hasSelection) {
+        navigator.clipboard.writeText(term.getSelection())
+      } else if (action === 'paste') {
+        const text = await navigator.clipboard.readText()
+        window.electronAPI.pty.write(paneId, text)
+      } else if (action === 'clear') {
+        term.clear()
+      } else if (action === 'vsplit') {
+        useStore.getState().splitPane(sessionId, paneId, 'vsplit')
+      } else if (action === 'hsplit') {
+        useStore.getState().splitPane(sessionId, paneId, 'hsplit')
+      }
     })
 
     // Focus on click
@@ -282,7 +306,20 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
           <button className="search-nav-btn" onClick={() => { setShowSearch(false); try { searchAddonRef.current?.clearDecorations() } catch {}; termRef.current?.focus() }}>✕</button>
         </div>
       )}
-      <div ref={containerRef} className="terminal-container" />
+      <div
+        ref={containerRef}
+        className="terminal-container"
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
+        onDrop={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          const files = Array.from(e.dataTransfer.files)
+          if (files.length > 0) {
+            const paths = files.map((f) => f.path.includes(' ') ? `"${f.path}"` : f.path).join(' ')
+            window.electronAPI.pty.write(paneId, paths)
+          }
+        }}
+      />
     </div>
   )
 }

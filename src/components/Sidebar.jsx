@@ -1,6 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react'
 import useStore from '../store'
 
+function ConfirmModal({ message, onConfirm, onCancel }) {
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Enter') onConfirm()
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onConfirm, onCancel])
+
+  return (
+    <div className="confirm-overlay" onClick={onCancel}>
+      <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="confirm-message">{message}</div>
+        <div className="confirm-buttons">
+          <button className="confirm-btn cancel" onClick={onCancel}>Cancel</button>
+          <button className="confirm-btn danger" onClick={onConfirm}>Delete</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function BranchPicker({ branches, worktrees, pos, onSelect, onClose, creating }) {
   const ref = useRef(null)
   const searchRef = useRef(null)
@@ -112,6 +135,7 @@ function Sidebar({ onOpenSettings, style }) {
   const editInputRef = useRef(null)
   const [dragSession, setDragSession] = useState(null)
   const [dragDir, setDragDir] = useState(null)
+  const [confirmAction, setConfirmAction] = useState(null)
 
   useEffect(() => {
     if (editingSession) editInputRef.current?.select()
@@ -165,17 +189,20 @@ function Sidebar({ onOpenSettings, style }) {
       alert('Cannot delete main worktree.')
       return
     }
-    const ok = confirm(`Delete worktree?\n${session.cwd}`)
-    if (!ok) return
-
-    removeSession(dir.id, session.id)
-    const result = await window.electronAPI.removeGitWorktree({
-      repoPath: dir.path,
-      worktreePath: session.cwd,
+    setConfirmAction({
+      message: `Delete worktree?\n${session.cwd}`,
+      onConfirm: async () => {
+        setConfirmAction(null)
+        removeSession(dir.id, session.id)
+        const result = await window.electronAPI.removeGitWorktree({
+          repoPath: dir.path,
+          worktreePath: session.cwd,
+        })
+        if (!result.success) {
+          alert(`Worktree deletion failed:\n${result.error}`)
+        }
+      },
     })
-    if (!result.success) {
-      alert(`Worktree deletion failed:\n${result.error}`)
-    }
   }
 
   const handlePickBranch = async (branch) => {
@@ -391,6 +418,13 @@ function Sidebar({ onOpenSettings, style }) {
           </button>
         </div>
       </div>
+      {confirmAction && (
+        <ConfirmModal
+          message={confirmAction.message}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
     </div>
   )
 }

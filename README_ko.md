@@ -19,7 +19,10 @@ Git worktree 워크플로우를 위한 터미널 매니저. 여러 worktree의 �
 - **세션 복제** — 클릭 한 번으로 세션 복제
 - **드래그 앤 드롭 정렬** — 세션과 디렉토리를 드래그하여 순서 변경
 - **스니펫** — 자주 사용하는 명령어 저장 및 실행
-- **커스터마이징** — 폰트, 테마 (Catppuccin, Dracula, Nord 등) 설정
+- **커스터마이징** — 폰트, 테마 (Catppuccin, Dracula, Nord 등), 셸 선택
+- **컨텍스트 메뉴** — 우클릭으로 복사, 붙여넣기, 분할, 지우기
+- **파일 드롭** — 파일을 터미널에 끌어다 놓으면 경로 삽입
+- **명령 완료 알림** — 비활성 세션에서 명령 완료 시 알림
 - **세션 자동 복원** — 앱 재시작 시 이전 세션 자동 복원
 - **자동 업데이트** — 새 버전 출시 시 알림 및 업데이트
 
@@ -32,15 +35,16 @@ Git worktree 워크플로우를 위한 터미널 매니저. 여러 worktree의 �
 | `Cmd+W` | 현재 세션 닫기 |
 | `Cmd+F` | 터미널 내 검색 |
 | `Cmd+1-9` | n번째 세션으로 전환 |
+| `Cmd+Shift+[` / `]` | 이전 / 다음 세션 |
 
 ## 다운로드
 
 | OS | 아키텍처 | 다운로드 |
 |----|----------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.2.3-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3-arm64.dmg) |
-| macOS | Intel | [Grove-0.2.3.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3.dmg) |
-| Windows | x64 | [Grove-Setup-0.2.3.exe](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-Setup-0.2.3.exe) |
-| Linux | x64 | [Grove-0.2.3.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3.AppImage) |
+| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.3.0-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.3.0/Grove-0.3.0-arm64.dmg) |
+| macOS | Intel | [Grove-0.3.0.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.3.0/Grove-0.3.0.dmg) |
+| Windows | x64 | [Grove-Setup-0.3.0.exe](https://github.com/djatjdwns28/grove/releases/download/v0.3.0/Grove-Setup-0.3.0.exe) |
+| Linux | x64 | [Grove-0.3.0.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.3.0/Grove-0.3.0.AppImage) |
 
 전체 파일은 [Releases](https://github.com/djatjdwns28/grove/releases/latest) 페이지에서 확인하세요.
 

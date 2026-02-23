@@ -5,6 +5,7 @@ import SettingsModal from './components/SettingsModal'
 import CommandPalette from './components/CommandPalette'
 import StatusBar from './components/StatusBar'
 import useStore from './store'
+import { getUIVariables } from './themes'
 import './App.css'
 
 function RecentSessionsPicker({ onClose }) {
@@ -243,6 +244,15 @@ function SidebarResizer({ width, onResize }) {
 }
 
 function App() {
+  const settings = useStore((s) => s.settings)
+
+  // Inject CSS variables from active theme
+  useEffect(() => {
+    const vars = getUIVariables(settings.themeName, settings.customColors)
+    const root = document.documentElement
+    Object.entries(vars).forEach(([key, val]) => root.style.setProperty(key, val))
+  }, [settings.themeName, settings.customColors])
+
   const activeSessionId = useStore((s) => s.activeSessionId)
   const directories = useStore((s) => s.directories)
   const setActiveSession = useStore((s) => s.setActiveSession)
@@ -350,6 +360,17 @@ function App() {
         const current = allSessions.find((s) => s.id === activeSessionId)
         if (current) removeSession(current.dirId, current.id)
       }
+      return
+    }
+
+    // Cmd+Shift+[ / ] — cycle sessions
+    if (e.shiftKey && (e.key === '[' || e.key === ']') && allSessions.length > 0) {
+      e.preventDefault()
+      const idx = allSessions.findIndex((s) => s.id === activeSessionId)
+      const next = e.key === ']'
+        ? allSessions[(idx + 1) % allSessions.length]
+        : allSessions[(idx - 1 + allSessions.length) % allSessions.length]
+      if (next) setActiveSession(next.id)
       return
     }
   }, [allSessions, activeSessionId, setActiveSession, removeSession])

@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
   },
   openDirectory: () => ipcRenderer.invoke('dialog:open-directory'),
+  showContextMenu: (params) => ipcRenderer.invoke('context-menu:show', params),
   getGitBranches: (dirPath) => ipcRenderer.invoke('git:branches', dirPath),
   getGitWorktrees: (dirPath) => ipcRenderer.invoke('git:worktrees', dirPath),
   getAllBranches: (dirPath) => ipcRenderer.invoke('git:all-branches', dirPath),

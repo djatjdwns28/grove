@@ -156,6 +156,15 @@ function SettingsModal({ onClose }) {
                     </button>
                   </div>
                   <span className="settings-hint">Send notification when a long-running command finishes in an inactive session</span>
+
+                  <label className="settings-label" style={{ marginTop: 12 }}>Shell</label>
+                  <input
+                    className="settings-input"
+                    placeholder="System default (e.g. /bin/zsh, /bin/bash)"
+                    value={settings.defaultShell || ''}
+                    onChange={(e) => updateSettings({ defaultShell: e.target.value })}
+                  />
+                  <span className="settings-hint">Leave empty to use system default. New sessions will use this shell.</span>
                 </div>
               )}
 
