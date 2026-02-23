@@ -11,6 +11,8 @@ const defaultSettings = {
   themeName: 'catppuccin-mocha',
   customColors: null,
   snippets: [],
+  notifyOnComplete: true,
+  notifyIdleSeconds: 3,
 }
 
 const updateNodeSizes = (node, path, sizes) => {

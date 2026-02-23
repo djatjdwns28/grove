@@ -37,10 +37,10 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 
 | OS | Architecture | Download |
 |----|-------------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.2.2-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.2/Grove-0.2.2-arm64.dmg) |
-| macOS | Intel | [Grove-0.2.2.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.2/Grove-0.2.2.dmg) |
-| Windows | x64 | [Grove-Setup-0.2.2.exe](https://github.com/djatjdwns28/grove/releases/download/v0.2.2/Grove-Setup-0.2.2.exe) |
-| Linux | x64 | [Grove-0.2.2.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.2.2/Grove-0.2.2.AppImage) |
+| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.2.3-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3-arm64.dmg) |
+| macOS | Intel | [Grove-0.2.3.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3.dmg) |
+| Windows | x64 | [Grove-Setup-0.2.3.exe](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-Setup-0.2.3.exe) |
+| Linux | x64 | [Grove-0.2.3.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3.AppImage) |
 
 Or browse all files on the [Releases](https://github.com/djatjdwns28/grove/releases/latest) page.
 

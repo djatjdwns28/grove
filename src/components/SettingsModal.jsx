@@ -145,6 +145,17 @@ function SettingsModal({ onClose }) {
                     value={settings.scrollback}
                     onChange={(e) => updateSettings({ scrollback: Number(e.target.value) })}
                   />
+
+                  <div className="settings-row">
+                    <label className="settings-label" style={{ flex: 1, marginBottom: 0 }}>Notify on Command Complete</label>
+                    <button
+                      className={`settings-toggle ${settings.notifyOnComplete !== false ? 'on' : ''}`}
+                      onClick={() => updateSettings({ notifyOnComplete: !settings.notifyOnComplete })}
+                    >
+                      <span className="settings-toggle-knob" />
+                    </button>
+                  </div>
+                  <span className="settings-hint">Send notification when a long-running command finishes in an inactive session</span>
                 </div>
               )}
 

@@ -37,10 +37,10 @@ Git worktree 워크플로우를 위한 터미널 매니저. 여러 worktree의 �
 
 | OS | 아키텍처 | 다운로드 |
 |----|----------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.2.2-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.2/Grove-0.2.2-arm64.dmg) |
-| macOS | Intel | [Grove-0.2.2.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.2/Grove-0.2.2.dmg) |
-| Windows | x64 | [Grove-Setup-0.2.2.exe](https://github.com/djatjdwns28/grove/releases/download/v0.2.2/Grove-Setup-0.2.2.exe) |
-| Linux | x64 | [Grove-0.2.2.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.2.2/Grove-0.2.2.AppImage) |
+| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.2.3-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3-arm64.dmg) |
+| macOS | Intel | [Grove-0.2.3.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3.dmg) |
+| Windows | x64 | [Grove-Setup-0.2.3.exe](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-Setup-0.2.3.exe) |
+| Linux | x64 | [Grove-0.2.3.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.2.3/Grove-0.2.3.AppImage) |
 
 전체 파일은 [Releases](https://github.com/djatjdwns28/grove/releases/latest) 페이지에서 확인하세요.
 

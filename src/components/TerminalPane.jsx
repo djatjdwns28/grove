@@ -101,11 +101,40 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     requestAnimationFrame(() => safeFit())
 
     window.electronAPI.pty.create({ id: paneId, cwd }).then(() => {
+      let busySince = null
+      let idleTimer = null
+
       const removeData = window.electronAPI.pty.onData(paneId, (data) => {
         term.write(data)
+
+        // Activity tracking for completion notification
+        const s = useStore.getState().settings
+        if (!s.notifyOnComplete) return
+
+        if (!busySince) busySince = Date.now()
+
+        clearTimeout(idleTimer)
+        idleTimer = setTimeout(() => {
+          if (!busySince) return
+          const elapsed = (Date.now() - busySince) / 1000
+          busySince = null
+          if (elapsed < (s.notifyIdleSeconds || 3)) return
+
+          const currentActive = useStore.getState().activeSessionId
+          if (currentActive !== sessionId) {
+            const dir = useStore.getState().directories.find((d) =>
+              d.sessions.some((ss) => ss.id === sessionId)
+            )
+            const session = dir?.sessions.find((ss) => ss.id === sessionId)
+            const name = session?.name || 'Terminal'
+            window.electronAPI.showNotification('Command completed', `"${name}" is ready`)
+          }
+        }, (s.notifyIdleSeconds || 3) * 1000)
       })
 
       window.electronAPI.pty.onExit(paneId, () => {
+        clearTimeout(idleTimer)
+        busySince = null
         term.write('\r\n\x1b[2m[Process exited]\x1b[0m\r\n')
         const currentActive = useStore.getState().activeSessionId
         if (currentActive !== sessionId) {
@@ -141,7 +170,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       })
       ro.observe(containerRef.current)
 
-      term._cleanup = () => { removeData(); ro.disconnect() }
+      term._cleanup = () => { removeData(); ro.disconnect(); clearTimeout(idleTimer) }
     })
 
     // Focus on click
