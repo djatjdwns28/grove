@@ -23,9 +23,16 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
   const safeFit = () => {
     try {
       const el = containerRef.current
-      if (!el || !fitAddonRef.current || !termRef.current) return
+      const term = termRef.current
+      if (!el || !fitAddonRef.current || !term) return
       if (el.offsetWidth === 0 || el.offsetHeight === 0) return
+
+      const buf = term.buffer.active
+      const wasAtBottom = buf.baseY + term.rows >= buf.length
+
       fitAddonRef.current.fit()
+
+      if (wasAtBottom) term.scrollToBottom()
     } catch {}
   }
 
@@ -126,7 +133,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
           if (elapsed < (s.notifyIdleSeconds || 3)) return
 
           const currentActive = useStore.getState().activeSessionId
-          if (currentActive !== sessionId) {
+          if (currentActive !== sessionId || !document.hasFocus()) {
             const dir = useStore.getState().directories.find((d) =>
               d.sessions.some((ss) => ss.id === sessionId)
             )
@@ -142,7 +149,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
         busySince = null
         term.write('\r\n\x1b[2m[Process exited]\x1b[0m\r\n')
         const currentActive = useStore.getState().activeSessionId
-        if (currentActive !== sessionId) {
+        if (currentActive !== sessionId || !document.hasFocus()) {
           window.electronAPI.showNotification('Command completed', 'Process has exited')
         }
       })
@@ -165,17 +172,21 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
         }
       })
 
+      let resizeTimer = null
       const ro = new ResizeObserver(() => {
-        safeFit()
-        if (termRef.current) {
-          try {
-            window.electronAPI.pty.resize(paneId, termRef.current.cols, termRef.current.rows)
-          } catch {}
-        }
+        clearTimeout(resizeTimer)
+        resizeTimer = setTimeout(() => {
+          safeFit()
+          if (termRef.current) {
+            try {
+              window.electronAPI.pty.resize(paneId, termRef.current.cols, termRef.current.rows)
+            } catch {}
+          }
+        }, 50)
       })
       ro.observe(containerRef.current)
 
-      term._cleanup = () => { removeData(); ro.disconnect(); clearTimeout(idleTimer) }
+      term._cleanup = () => { removeData(); ro.disconnect(); clearTimeout(idleTimer); clearTimeout(resizeTimer) }
     })
 
     // Right-click context menu

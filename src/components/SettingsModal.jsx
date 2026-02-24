@@ -155,7 +155,7 @@ function SettingsModal({ onClose }) {
                       <span className="settings-toggle-knob" />
                     </button>
                   </div>
-                  <span className="settings-hint">Send notification when a long-running command finishes in an inactive session</span>
+                  <span className="settings-hint">Send notification when a long-running command finishes in a background session or while Grove is not focused</span>
 
                   <label className="settings-label" style={{ marginTop: 12 }}>Shell</label>
                   <input
