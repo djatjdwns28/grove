@@ -50,10 +50,30 @@ const useStore = create(
       removeDirectory: (dirId) => {
         const dir = get().directories.find((d) => d.id === dirId)
         dir?.sessions.forEach((s) => window.electronAPI?.pty.kill(s.id))
-        set((s) => ({
-          directories: s.directories.filter((d) => d.id !== dirId),
-          activeSessionId: s.activeSessionId,
-        }))
+        const removedIds = new Set(dir?.sessions.map((s) => s.id) || [])
+
+        const pruneLayout = (node) => {
+          if (!node) return null
+          if (node.type === 'session') return removedIds.has(node.sessionId) ? null : node
+          const children = node.children.map(pruneLayout).filter(Boolean)
+          if (children.length === 0) return null
+          if (children.length === 1) return children[0]
+          return { ...node, children }
+        }
+
+        set((s) => {
+          let wl = pruneLayout(s.workspaceLayout)
+          if (wl?.type === 'session') wl = null
+          let swl = pruneLayout(s.savedWorkspaceLayout)
+          if (swl?.type === 'session') swl = null
+
+          return {
+            directories: s.directories.filter((d) => d.id !== dirId),
+            activeSessionId: removedIds.has(s.activeSessionId) ? null : s.activeSessionId,
+            workspaceLayout: wl,
+            savedWorkspaceLayout: swl,
+          }
+        })
       },
 
       addSession: (dirId, name, cwd) => {
@@ -158,18 +178,18 @@ const useStore = create(
             ? [{ dirId, name: closed.name, cwd: closed.cwd, closedAt: Date.now() }, ...s.recentlyClosed].slice(0, 10)
             : s.recentlyClosed
           // Clean up workspace layout
-          let newWorkspaceLayout = s.workspaceLayout
-          if (newWorkspaceLayout) {
-            const removeFromWs = (node) => {
-              if (node.type === 'session') return node.sessionId === sessionId ? null : node
-              const children = node.children.map(removeFromWs).filter(Boolean)
-              if (children.length === 0) return null
-              if (children.length === 1) return children[0]
-              return { ...node, children }
-            }
-            newWorkspaceLayout = removeFromWs(newWorkspaceLayout)
-            if (newWorkspaceLayout?.type === 'session') newWorkspaceLayout = null
+          const pruneWs = (node) => {
+            if (node.type === 'session') return node.sessionId === sessionId ? null : node
+            const children = node.children.map(pruneWs).filter(Boolean)
+            if (children.length === 0) return null
+            if (children.length === 1) return children[0]
+            return { ...node, children }
           }
+          let newWorkspaceLayout = s.workspaceLayout ? pruneWs(s.workspaceLayout) : null
+          if (newWorkspaceLayout?.type === 'session') newWorkspaceLayout = null
+
+          let newSavedWorkspaceLayout = s.savedWorkspaceLayout ? pruneWs(s.savedWorkspaceLayout) : null
+          if (newSavedWorkspaceLayout?.type === 'session') newSavedWorkspaceLayout = null
 
           return {
             directories: s.directories.map((d) =>
@@ -178,6 +198,7 @@ const useStore = create(
             activeSessionId: newActive,
             recentlyClosed,
             workspaceLayout: newWorkspaceLayout,
+            savedWorkspaceLayout: newSavedWorkspaceLayout,
           }
         })
       },
@@ -200,17 +221,26 @@ const useStore = create(
 
       setActiveSession: (id) => {
         const state = get()
-        if (state.workspaceLayout) {
-          const isIn = (node, sid) => {
-            if (!node) return false
-            if (node.type === 'session') return node.sessionId === sid
-            return node.children?.some(c => isIn(c, sid)) || false
-          }
-          if (!isIn(state.workspaceLayout, id)) {
-            set({ activeSessionId: id, workspaceLayout: null })
-            return
-          }
+        const isIn = (node, sid) => {
+          if (!node) return false
+          if (node.type === 'session') return node.sessionId === sid
+          return node.children?.some(c => isIn(c, sid)) || false
         }
+
+        if (state.workspaceLayout) {
+          if (isIn(state.workspaceLayout, id)) {
+            set({ activeSessionId: id })
+          } else {
+            set({ activeSessionId: id, workspaceLayout: null, savedWorkspaceLayout: state.workspaceLayout })
+          }
+          return
+        }
+
+        if (state.savedWorkspaceLayout && isIn(state.savedWorkspaceLayout, id)) {
+          set({ activeSessionId: id, workspaceLayout: state.savedWorkspaceLayout, savedWorkspaceLayout: null })
+          return
+        }
+
         set({ activeSessionId: id })
       },
 
@@ -292,6 +322,7 @@ const useStore = create(
 
       // Workspace split (view multiple sessions simultaneously)
       workspaceLayout: null,
+      savedWorkspaceLayout: null,
       draggingSessionId: null,
       setDraggingSessionId: (id) => set({ draggingSessionId: id }),
 
@@ -312,7 +343,7 @@ const useStore = create(
         if (!state.workspaceLayout) {
           const targetNode = { type: 'session', sessionId: targetSessionId }
           const children = insertBefore ? [newNode, targetNode] : [targetNode, newNode]
-          set({ workspaceLayout: { type: direction, children }, activeSessionId: newSessionId })
+          set({ workspaceLayout: { type: direction, children }, activeSessionId: newSessionId, savedWorkspaceLayout: null })
           return
         }
 
@@ -326,7 +357,7 @@ const useStore = create(
           }
           return node
         }
-        set({ workspaceLayout: insertSplit(state.workspaceLayout), activeSessionId: newSessionId })
+        set({ workspaceLayout: insertSplit(state.workspaceLayout), activeSessionId: newSessionId, savedWorkspaceLayout: null })
       },
 
       removeSessionFromWorkspace: (sessionId) => {
@@ -388,7 +419,7 @@ const useStore = create(
         }
 
         const children = insertBefore ? [newNode, existingLayout] : [existingLayout, newNode]
-        set({ workspaceLayout: { type: direction, children }, activeSessionId: newSessionId })
+        set({ workspaceLayout: { type: direction, children }, activeSessionId: newSessionId, savedWorkspaceLayout: null })
       },
     }),
     {
@@ -405,7 +436,30 @@ const useStore = create(
         })),
         activeSessionId: s.activeSessionId,
         settings: s.settings,
+        workspaceLayout: s.workspaceLayout || null,
+        savedWorkspaceLayout: s.savedWorkspaceLayout || null,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return
+        const validIds = new Set(
+          state.directories.flatMap((d) => d.sessions.map((s) => s.id))
+        )
+        const validateLayout = (node) => {
+          if (!node) return null
+          if (node.type === 'session') return validIds.has(node.sessionId) ? node : null
+          const children = node.children.map(validateLayout).filter(Boolean)
+          if (children.length === 0) return null
+          if (children.length === 1) return children[0]
+          return { ...node, children }
+        }
+        let wl = validateLayout(state.workspaceLayout)
+        if (wl?.type === 'session') wl = null
+        let swl = validateLayout(state.savedWorkspaceLayout)
+        if (swl?.type === 'session') swl = null
+        if (wl !== state.workspaceLayout || swl !== state.savedWorkspaceLayout) {
+          useStore.setState({ workspaceLayout: wl, savedWorkspaceLayout: swl })
+        }
+      },
     }
   )
 )
