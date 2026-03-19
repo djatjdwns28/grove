@@ -115,7 +115,9 @@ function Terminal({ session, isActive, isVisible, bounds }) {
   const addSessionToWorkspace = useStore((s) => s.addSessionToWorkspace)
   const setActiveSession = useStore((s) => s.setActiveSession)
   const draggingSessionId = useStore((s) => s.draggingSessionId)
+  const draggingFromWorkspace = useStore((s) => s.draggingFromWorkspace)
   const setDraggingSessionId = useStore((s) => s.setDraggingSessionId)
+  const swapWorkspaceSessions = useStore((s) => s.swapWorkspaceSessions)
   const broadcastMode = useStore((s) => s.broadcastMode)
   const toggleBroadcast = useStore((s) => s.toggleBroadcast)
 
@@ -179,7 +181,7 @@ function Terminal({ session, isActive, isVisible, bounds }) {
   const handleCaptureDragOver = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    setDropZone(getDropZone(e))
+    setDropZone(draggingFromWorkspace ? 'swap' : getDropZone(e))
   }
 
   const handleCaptureDragLeave = (e) => {
@@ -191,13 +193,16 @@ function Terminal({ session, isActive, isVisible, bounds }) {
   const handleCaptureDrop = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    const zone = getDropZone(e)
     setDropZone(null)
-    if (draggingSessionId && draggingSessionId !== session.id) {
+    if (!draggingSessionId || draggingSessionId === session.id) return
+    if (draggingFromWorkspace) {
+      swapWorkspaceSessions(session.id, draggingSessionId)
+    } else {
+      const zone = getDropZone(e)
       addSessionToWorkspace(session.id, draggingSessionId, zone)
       setActiveSession(draggingSessionId)
-      setDraggingSessionId(null)
     }
+    setDraggingSessionId(null)
   }
 
   const gitStatus = session.gitStatus
@@ -221,7 +226,16 @@ function Terminal({ session, isActive, isVisible, bounds }) {
       className={`terminal-wrapper ${bounds ? 'workspace-pane' : ''}`}
       style={style}
     >
-      <div className="terminal-header">
+      <div
+        className={`terminal-header ${bounds ? 'workspace-draggable' : ''}`}
+        draggable={!!bounds}
+        onDragStart={bounds ? (e) => {
+          e.dataTransfer.effectAllowed = 'move'
+          e.dataTransfer.setData('text/session-id', session.id)
+          setDraggingSessionId(session.id, true)
+        } : undefined}
+        onDragEnd={bounds ? () => setDraggingSessionId(null) : undefined}
+      >
         <div className="terminal-header-left">
           <span className="terminal-session-name">{session.name}</span>
           {gitStatus && (
@@ -281,11 +295,15 @@ function Terminal({ session, isActive, isVisible, bounds }) {
           onDragLeave={handleCaptureDragLeave}
           onDrop={handleCaptureDrop}
         >
-          {dropZone && (
+          {dropZone === 'swap' ? (
+            <div className="drop-overlay drop-swap">
+              <div className="drop-overlay-label">Swap</div>
+            </div>
+          ) : dropZone ? (
             <div className={`drop-overlay drop-${dropZone}`}>
               <div className="drop-overlay-label">Drop here</div>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

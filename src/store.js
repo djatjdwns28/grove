@@ -324,7 +324,8 @@ const useStore = create(
       workspaceLayout: null,
       savedWorkspaceLayout: null,
       draggingSessionId: null,
-      setDraggingSessionId: (id) => set({ draggingSessionId: id }),
+      draggingFromWorkspace: false,
+      setDraggingSessionId: (id, fromWorkspace = false) => set({ draggingSessionId: id, draggingFromWorkspace: fromWorkspace }),
 
       addSessionToWorkspace: (targetSessionId, newSessionId, zone) => {
         const state = get()
@@ -420,6 +421,20 @@ const useStore = create(
 
         const children = insertBefore ? [newNode, existingLayout] : [existingLayout, newNode]
         set({ workspaceLayout: { type: direction, children }, activeSessionId: newSessionId, savedWorkspaceLayout: null })
+      },
+
+      swapWorkspaceSessions: (idA, idB) => {
+        const state = get()
+        if (!state.workspaceLayout) return
+        const swapIds = (node) => {
+          if (node.type === 'session') {
+            if (node.sessionId === idA) return { ...node, sessionId: idB }
+            if (node.sessionId === idB) return { ...node, sessionId: idA }
+            return node
+          }
+          return { ...node, children: node.children.map(swapIds) }
+        }
+        set({ workspaceLayout: swapIds(state.workspaceLayout) })
       },
     }),
     {

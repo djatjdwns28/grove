@@ -259,6 +259,7 @@ function App() {
   const removeSession = useStore((s) => s.removeSession)
   const workspaceLayout = useStore((s) => s.workspaceLayout)
   const draggingSessionId = useStore((s) => s.draggingSessionId)
+  const draggingFromWorkspace = useStore((s) => s.draggingFromWorkspace)
   const setDraggingSessionId = useStore((s) => s.setDraggingSessionId)
   const addSessionToWorkspaceRoot = useStore((s) => s.addSessionToWorkspaceRoot)
   const splitPane = useStore((s) => s.splitPane)
@@ -408,7 +409,7 @@ function App() {
         ))}
 
         {/* Main area edge drop zones (root level split) */}
-        {draggingSessionId && (
+        {draggingSessionId && !draggingFromWorkspace && (
           <>
             {['left', 'right', 'top', 'bottom'].map((zone) => (
               <div

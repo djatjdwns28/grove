@@ -29,10 +29,15 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
 
       const buf = term.buffer.active
       const wasAtBottom = buf.baseY + term.rows >= buf.length
+      const savedViewportY = buf.viewportY
 
       fitAddonRef.current.fit()
 
-      if (wasAtBottom) term.scrollToBottom()
+      if (wasAtBottom) {
+        term.scrollToBottom()
+      } else {
+        term.scrollToLine(savedViewportY)
+      }
     } catch {}
   }
 
