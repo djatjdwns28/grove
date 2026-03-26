@@ -14,6 +14,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
   const fitAddonRef = useRef(null)
   const searchAddonRef = useRef(null)
   const searchInputRef = useRef(null)
+  const lastSizeRef = useRef({ cols: 0, rows: 0 })
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -27,6 +28,13 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       if (!el || !fitAddonRef.current || !term) return
       if (el.offsetWidth === 0 || el.offsetHeight === 0) return
 
+      // Alternate buffer (used by TUI apps like Claude Code): just fit, no scroll manipulation needed
+      if (term.buffer.active.type === 'alternate') {
+        fitAddonRef.current.fit()
+        return
+      }
+
+      // Normal buffer: preserve scroll position across fit/reflow
       const buf = term.buffer.active
       const wasAtBottom = buf.baseY + term.rows >= buf.length
       const savedViewportY = buf.viewportY
@@ -38,6 +46,18 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       } else {
         term.scrollToLine(savedViewportY)
       }
+    } catch {}
+  }
+
+  // Only send pty resize when dimensions actually changed (prevents spurious SIGWINCH)
+  const resizePtyIfNeeded = () => {
+    const term = termRef.current
+    if (!term) return
+    const { cols, rows } = term
+    if (cols === lastSizeRef.current.cols && rows === lastSizeRef.current.rows) return
+    lastSizeRef.current = { cols, rows }
+    try {
+      window.electronAPI.pty.resize(paneId, cols, rows)
     } catch {}
   }
 
@@ -182,11 +202,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
         clearTimeout(resizeTimer)
         resizeTimer = setTimeout(() => {
           safeFit()
-          if (termRef.current) {
-            try {
-              window.electronAPI.pty.resize(paneId, termRef.current.cols, termRef.current.rows)
-            } catch {}
-          }
+          resizePtyIfNeeded()
         }, 50)
       })
       ro.observe(containerRef.current)
@@ -238,11 +254,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     term.options.scrollback = settings.scrollback
     requestAnimationFrame(() => {
       safeFit()
-      if (termRef.current) {
-        try {
-          window.electronAPI.pty.resize(paneId, termRef.current.cols, termRef.current.rows)
-        } catch {}
-      }
+      resizePtyIfNeeded()
     })
   }, [settings, paneId])
 
@@ -251,11 +263,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     if (!isVisible) return
     requestAnimationFrame(() => {
       safeFit()
-      if (termRef.current) {
-        try {
-          window.electronAPI.pty.resize(paneId, termRef.current.cols, termRef.current.rows)
-        } catch {}
-      }
+      resizePtyIfNeeded()
     })
   }, [isVisible, paneId])
 
