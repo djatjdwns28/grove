@@ -40,14 +40,14 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 
 ## Download
 
-| OS | Architecture | Download |
-|----|-------------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.4.2-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.2/Grove-0.4.2-arm64.dmg) |
-| macOS | Intel | [Grove-0.4.2.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.2/Grove-0.4.2.dmg) |
-| Windows | x64 | [Grove-Setup-0.4.2.exe](https://github.com/djatjdwns28/grove/releases/download/v0.4.2/Grove-Setup-0.4.2.exe) |
-| Linux | x64 | [Grove-0.4.2.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.4.2/Grove-0.4.2.AppImage) |
+Download the latest version from the **[Releases](https://github.com/djatjdwns28/grove/releases/latest)** page.
 
-Or browse all files on the [Releases](https://github.com/djatjdwns28/grove/releases/latest) page.
+| OS | Architecture | File |
+|----|-------------|------|
+| macOS | Apple Silicon (M1/M2/M3/M4) | `Grove-x.x.x-arm64.dmg` |
+| macOS | Intel | `Grove-x.x.x.dmg` |
+| Windows | x64 | `Grove-Setup-x.x.x.exe` |
+| Linux | x64 | `Grove-x.x.x.AppImage` |
 
 ### macOS — "Apple cannot check for malicious software" warning
 
