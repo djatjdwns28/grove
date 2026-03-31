@@ -261,15 +261,18 @@ const useStore = create(
           ),
         })),
 
-      // Feature 3: Git status update
+      // Feature 3: Git status update (skip directories without matching session)
       updateSessionGitStatus: (sessionId, gitStatus) =>
         set((s) => ({
-          directories: s.directories.map((d) => ({
-            ...d,
-            sessions: d.sessions.map((ss) =>
-              ss.id === sessionId ? { ...ss, gitStatus } : ss
-            ),
-          })),
+          directories: s.directories.map((d) => {
+            if (!d.sessions.some((ss) => ss.id === sessionId)) return d
+            return {
+              ...d,
+              sessions: d.sessions.map((ss) =>
+                ss.id === sessionId ? { ...ss, gitStatus } : ss
+              ),
+            }
+          }),
         })),
 
       // Feature 6: Reorder sessions
@@ -296,6 +299,19 @@ const useStore = create(
       // Broadcast mode
       broadcastMode: false,
       toggleBroadcast: () => set((s) => ({ broadcastMode: !s.broadcastMode })),
+
+      // Collect all pane IDs for broadcast (avoids per-keystroke tree traversal)
+      getAllPaneIds: () => {
+        const state = get()
+        const collect = (node) => {
+          if (!node) return []
+          if (node.type === 'pane') return [node.id]
+          return (node.children || []).flatMap(collect)
+        }
+        return state.directories.flatMap((d) =>
+          d.sessions.flatMap((s) => collect(s.layout || { type: 'pane', id: s.id }))
+        )
+      },
 
       // Clone session
       cloneSession: (dirId, sessionId) => {

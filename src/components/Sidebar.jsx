@@ -112,21 +112,19 @@ function BranchPicker({ branches, worktrees, pos, onSelect, onClose, creating })
 }
 
 function Sidebar({ onOpenSettings, style }) {
-  const {
-    directories,
-    addDirectory,
-    removeDirectory,
-    addSession,
-    removeSession,
-    setActiveSession,
-    toggleDirectory,
-    updateSessionName,
-    reorderSessions,
-    reorderDirectories,
-    activeSessionId,
-    setDraggingSessionId,
-    cloneSession,
-  } = useStore()
+  const directories = useStore((s) => s.directories)
+  const activeSessionId = useStore((s) => s.activeSessionId)
+  const addDirectory = useStore((s) => s.addDirectory)
+  const removeDirectory = useStore((s) => s.removeDirectory)
+  const addSession = useStore((s) => s.addSession)
+  const removeSession = useStore((s) => s.removeSession)
+  const setActiveSession = useStore((s) => s.setActiveSession)
+  const toggleDirectory = useStore((s) => s.toggleDirectory)
+  const updateSessionName = useStore((s) => s.updateSessionName)
+  const reorderSessions = useStore((s) => s.reorderSessions)
+  const reorderDirectories = useStore((s) => s.reorderDirectories)
+  const setDraggingSessionId = useStore((s) => s.setDraggingSessionId)
+  const cloneSession = useStore((s) => s.cloneSession)
 
   const [pickerState, setPickerState] = useState(null)
   const [creatingWorktree, setCreatingWorktree] = useState(null)

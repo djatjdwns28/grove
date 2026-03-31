@@ -2,7 +2,9 @@ const { app, BrowserWindow, ipcMain, dialog, Notification, shell, Menu } = requi
 const path = require('path')
 const os = require('os')
 const fs = require('fs')
-const { execSync, exec } = require('child_process')
+const { exec } = require('child_process')
+const util = require('util')
+const execAsync = util.promisify(exec)
 
 const pty = require('node-pty')
 const { autoUpdater } = require('electron-updater')
@@ -121,12 +123,12 @@ app.whenReady().then(() => {
   })
 
   // Get all branches (local + remote)
-  ipcMain.handle('git:all-branches', (event, dirPath) => {
+  ipcMain.handle('git:all-branches', async (event, dirPath) => {
     try {
-      // Fetch remote refs first
-      try { execSync('git fetch --prune', { cwd: dirPath, encoding: 'utf8', stdio: 'pipe', timeout: 10000 }) } catch {}
+      // Fetch remote refs first (async — no longer blocks main process)
+      try { await execAsync('git fetch --prune', { cwd: dirPath, encoding: 'utf8', timeout: 15000 }) } catch {}
 
-      const localOutput = execSync('git branch', { cwd: dirPath, encoding: 'utf8' })
+      const { stdout: localOutput } = await execAsync('git branch', { cwd: dirPath, encoding: 'utf8' })
       const localBranches = localOutput.split('\n')
         .map((b) => ({
           name: b.replace(/^[\s*+]+/, '').trim(),
@@ -135,7 +137,7 @@ app.whenReady().then(() => {
         }))
         .filter((b) => b.name)
 
-      const remoteOutput = execSync('git branch -r', { cwd: dirPath, encoding: 'utf8' })
+      const { stdout: remoteOutput } = await execAsync('git branch -r', { cwd: dirPath, encoding: 'utf8' })
       const localNames = new Set(localBranches.map((b) => b.name))
       const remoteBranches = remoteOutput.split('\n')
         .map((b) => b.trim())
@@ -151,7 +153,7 @@ app.whenReady().then(() => {
   })
 
   // Create new worktree
-  ipcMain.handle('git:add-worktree', (event, { repoPath, branch }) => {
+  ipcMain.handle('git:add-worktree', async (event, { repoPath, branch }) => {
     try {
       const repoName = path.basename(repoPath)
       const safeBranch = branch.replace(/\//g, '-').replace(/[^a-zA-Z0-9-_.]/g, '')
@@ -164,10 +166,9 @@ app.whenReady().then(() => {
         worktreePath = path.join(parentDir, `${repoName}-${safeBranch}-${i++}`)
       }
 
-      execSync(`git worktree add "${worktreePath}" "${branch}"`, {
+      await execAsync(`git worktree add "${worktreePath}" "${branch}"`, {
         cwd: repoPath,
         encoding: 'utf8',
-        stdio: 'pipe',
       })
       return { success: true, path: worktreePath }
     } catch (e) {
@@ -176,12 +177,11 @@ app.whenReady().then(() => {
   })
 
   // Remove worktree
-  ipcMain.handle('git:remove-worktree', (event, { repoPath, worktreePath }) => {
+  ipcMain.handle('git:remove-worktree', async (event, { repoPath, worktreePath }) => {
     try {
-      execSync(`git worktree remove "${worktreePath}" --force`, {
+      await execAsync(`git worktree remove "${worktreePath}" --force`, {
         cwd: repoPath,
         encoding: 'utf8',
-        stdio: 'pipe',
       })
       return { success: true }
     } catch (e) {
@@ -190,12 +190,12 @@ app.whenReady().then(() => {
   })
 
   // Git status query (Feature 3)
-  ipcMain.handle('git:status', (event, dirPath) => {
+  ipcMain.handle('git:status', async (event, dirPath) => {
     try {
-      const output = execSync('git status --porcelain --branch', {
-        cwd: dirPath, encoding: 'utf8', stdio: 'pipe',
+      const { stdout } = await execAsync('git status --porcelain --branch', {
+        cwd: dirPath, encoding: 'utf8', timeout: 5000,
       })
-      const lines = output.trim().split('\n')
+      const lines = stdout.trim().split('\n')
       const branchLine = lines[0] || ''
       let branch = '', ahead = 0, behind = 0
       const branchMatch = branchLine.match(/^## (.+?)(?:\.\.\.(.+?))?(?:\s|$)/)
@@ -271,32 +271,32 @@ app.whenReady().then(() => {
   })
 
   // Get Git branches
-  ipcMain.handle('git:branches', (event, dirPath) => {
+  ipcMain.handle('git:branches', async (event, dirPath) => {
     try {
-      const branchOutput = execSync('git branch', { cwd: dirPath, encoding: 'utf8' })
+      const { stdout: branchOutput } = await execAsync('git branch', { cwd: dirPath, encoding: 'utf8' })
       const branches = branchOutput
         .split('\n')
         .map(b => b.replace('*', '').trim())
         .filter(Boolean)
 
-      const current = execSync('git branch --show-current', {
+      const { stdout: currentOutput } = await execAsync('git branch --show-current', {
         cwd: dirPath,
         encoding: 'utf8',
-      }).trim()
+      })
 
-      return { branches, current, isGit: true }
+      return { branches, current: currentOutput.trim(), isGit: true }
     } catch {
       return { branches: [], current: null, isGit: false }
     }
   })
 
   // Get Git worktree list
-  ipcMain.handle('git:worktrees', (event, dirPath) => {
+  ipcMain.handle('git:worktrees', async (event, dirPath) => {
     try {
-      const output = execSync('git worktree list --porcelain', { cwd: dirPath, encoding: 'utf8' })
+      const { stdout } = await execAsync('git worktree list --porcelain', { cwd: dirPath, encoding: 'utf8' })
       const worktrees = []
       // Each worktree block is separated by blank lines
-      for (const block of output.trim().split(/\n\n+/)) {
+      for (const block of stdout.trim().split(/\n\n+/)) {
         const wt = {}
         for (const line of block.trim().split('\n')) {
           if (line.startsWith('worktree ')) wt.path = line.slice(9)
