@@ -9,6 +9,7 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 - **Worktree Management** — Add directories, create worktrees from branches, and manage them from the sidebar
 - **Multi-Session Terminals** — Open multiple terminal sessions per directory with tab-like navigation
 - **Split Panes** — Split terminals vertically or horizontally within a session
+- **Auto Grid Layout** — All terminals visible at once in a directory-grouped grid
 - **Workspace Split** — Drag sessions to view multiple sessions side by side
 - **Broadcast Mode** — Type once, send to all terminals simultaneously
 - **Git Status** — See branch name, changed files, ahead/behind indicators at a glance
@@ -41,10 +42,10 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 
 | OS | Architecture | Download |
 |----|-------------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.3.4-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.3.4/Grove-0.3.4-arm64.dmg) |
-| macOS | Intel | [Grove-0.3.4.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.3.4/Grove-0.3.4.dmg) |
-| Windows | x64 | [Grove-Setup-0.3.4.exe](https://github.com/djatjdwns28/grove/releases/download/v0.3.4/Grove-Setup-0.3.4.exe) |
-| Linux | x64 | [Grove-0.3.4.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.3.4/Grove-0.3.4.AppImage) |
+| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.4.0-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.0/Grove-0.4.0-arm64.dmg) |
+| macOS | Intel | [Grove-0.4.0.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.0/Grove-0.4.0.dmg) |
+| Windows | x64 | [Grove-Setup-0.4.0.exe](https://github.com/djatjdwns28/grove/releases/download/v0.4.0/Grove-Setup-0.4.0.exe) |
+| Linux | x64 | [Grove-0.4.0.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.4.0/Grove-0.4.0.AppImage) |
 
 Or browse all files on the [Releases](https://github.com/djatjdwns28/grove/releases/latest) page.
 
