@@ -111,7 +111,6 @@ function Terminal({ session, isActive, isVisible, bounds }) {
   const settings = useStore((s) => s.settings)
   const splitPane = useStore((s) => s.splitPane)
   const closePane = useStore((s) => s.closePane)
-  const updateSessionGitStatus = useStore((s) => s.updateSessionGitStatus)
   const addSessionToWorkspace = useStore((s) => s.addSessionToWorkspace)
   const setActiveSession = useStore((s) => s.setActiveSession)
   const draggingSessionId = useStore((s) => s.draggingSessionId)
@@ -151,19 +150,12 @@ function Terminal({ session, isActive, isVisible, bounds }) {
   }, [isActive, session.id, activePaneId, layout, splitPane, closePane])
 
   useEffect(() => {
+    if (!isActive) return
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
+  }, [isActive, handleKeyDown])
 
-  useEffect(() => {
-    const poll = async () => {
-      const status = await window.electronAPI.getGitStatus(session.cwd)
-      if (status) updateSessionGitStatus(session.id, status)
-    }
-    poll()
-    const interval = setInterval(poll, 3000)
-    return () => clearInterval(interval)
-  }, [session.id, session.cwd, updateSessionGitStatus])
+  // Git status polling moved to App.jsx (centralized, deduplicated by cwd)
 
   const getDropZone = (e) => {
     if (!wrapperRef.current) return 'right'

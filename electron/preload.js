@@ -30,6 +30,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openInEditor: (params) => ipcRenderer.invoke('editor:open', params),
   getSystemInfo: () => ipcRenderer.invoke('system:info'),
   update: {
-    onAvailable: (cb) => ipcRenderer.on('update:available', (_, info) => cb(info)),
+    onAvailable: (cb) => {
+      const handler = (_, info) => cb(info)
+      ipcRenderer.on('update:available', handler)
+      return () => ipcRenderer.removeListener('update:available', handler)
+    },
   },
 })

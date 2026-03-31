@@ -15,6 +15,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
   const searchAddonRef = useRef(null)
   const searchInputRef = useRef(null)
   const lastSizeRef = useRef({ cols: 0, rows: 0 })
+  const isFocusedRef = useRef(false)
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -169,7 +170,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
         }, (s.notifyIdleSeconds || 3) * 1000)
       })
 
-      window.electronAPI.pty.onExit(paneId, () => {
+      const removeExit = window.electronAPI.pty.onExit(paneId, () => {
         clearTimeout(idleTimer)
         busySince = null
         term.write('\r\n\x1b[2m[Process exited]\x1b[0m\r\n')
@@ -182,16 +183,8 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       term.onData((data) => {
         const state = useStore.getState()
         if (state.broadcastMode) {
-          // Broadcast: forward input to all panes of all sessions
-          const collectPaneIds = (node) => {
-            if (!node) return []
-            if (node.type === 'pane') return [node.id]
-            return (node.children || []).flatMap(collectPaneIds)
-          }
-          const allPaneIds = state.directories.flatMap((d) =>
-            d.sessions.flatMap((s) => collectPaneIds(s.layout || { type: 'pane', id: s.id }))
-          )
-          allPaneIds.forEach((id) => window.electronAPI.pty.write(id, data))
+          // Broadcast: forward input to all panes
+          state.getAllPaneIds().forEach((id) => window.electronAPI.pty.write(id, data))
         } else {
           window.electronAPI.pty.write(paneId, data)
         }
@@ -207,7 +200,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       })
       ro.observe(containerRef.current)
 
-      term._cleanup = () => { removeData(); ro.disconnect(); clearTimeout(idleTimer); clearTimeout(resizeTimer) }
+      term._cleanup = () => { removeData(); removeExit(); ro.disconnect(); clearTimeout(idleTimer); clearTimeout(resizeTimer) }
     })
 
     // Right-click context menu
@@ -229,8 +222,8 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       }
     })
 
-    // Focus on click
-    term.onData(() => onFocus?.())
+    // Focus on typing into unfocused pane (e.g. after split without click)
+    term.onData(() => { if (!isFocusedRef.current) onFocus?.() })
 
     return () => {
       term._cleanup?.()
@@ -266,6 +259,11 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       resizePtyIfNeeded()
     })
   }, [isVisible, paneId])
+
+  // Sync focused ref for onData guard
+  useEffect(() => {
+    isFocusedRef.current = isFocused
+  }, [isFocused])
 
   // Focus terminal when focused
   useEffect(() => {

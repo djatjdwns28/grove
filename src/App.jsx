@@ -280,8 +280,42 @@ function App() {
     if (!draggingSessionId) setMainDropZone(null)
   }, [draggingSessionId])
 
-  const allSessions = directories.flatMap((dir) =>
-    dir.sessions.map((s) => ({ ...s, dirId: dir.id }))
+  // Centralized git status polling — deduplicated by cwd, 10s interval
+  useEffect(() => {
+    const cwdToSessionIds = new Map()
+    directories.forEach((dir) => {
+      dir.sessions.forEach((s) => {
+        const existing = cwdToSessionIds.get(s.cwd) || []
+        existing.push(s.id)
+        cwdToSessionIds.set(s.cwd, existing)
+      })
+    })
+
+    if (cwdToSessionIds.size === 0) return
+
+    const poll = async () => {
+      for (const [cwd, sessionIds] of cwdToSessionIds) {
+        try {
+          const status = await window.electronAPI.getGitStatus(cwd)
+          if (status) {
+            sessionIds.forEach((id) =>
+              useStore.getState().updateSessionGitStatus(id, status)
+            )
+          }
+        } catch {}
+      }
+    }
+
+    poll()
+    const interval = setInterval(poll, 10000)
+    return () => clearInterval(interval)
+  }, [directories])
+
+  const allSessions = useMemo(
+    () => directories.flatMap((dir) =>
+      dir.sessions.map((s) => ({ ...s, dirId: dir.id }))
+    ),
+    [directories]
   )
 
   const sessionBounds = useMemo(() => {

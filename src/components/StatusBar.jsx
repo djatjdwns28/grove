@@ -56,17 +56,18 @@ function StatusBar() {
       } catch {}
     }
     fetchInfo()
-    const interval = setInterval(fetchInfo, 5000)
+    const interval = setInterval(fetchInfo, 30000)
     return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
     if (!window.electronAPI.update) return
-    window.electronAPI.update.onAvailable((info) => {
+    const cleanup = window.electronAPI.update.onAvailable((info) => {
       setUpdateVersion(info.version)
       setReleaseNotes(info.releaseNotes || '')
       setShowTooltip(true)
     })
+    return cleanup
   }, [])
 
   const handleDownload = () => {
