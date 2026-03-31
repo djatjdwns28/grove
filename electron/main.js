@@ -122,31 +122,51 @@ app.whenReady().then(() => {
     return result.canceled ? null : result.filePaths[0]
   })
 
-  // Get all branches (local + remote)
+  // Helper: parse local + cached remote branches (no network)
+  const parseBranches = async (dirPath) => {
+    const { stdout: localOutput } = await execAsync('git branch', { cwd: dirPath, encoding: 'utf8' })
+    const localBranches = localOutput.split('\n')
+      .map((b) => ({
+        name: b.replace(/^[\s*+]+/, '').trim(),
+        current: b.trim().startsWith('*'),
+        remote: false,
+      }))
+      .filter((b) => b.name)
+
+    const { stdout: remoteOutput } = await execAsync('git branch -r', { cwd: dirPath, encoding: 'utf8' })
+    const localNames = new Set(localBranches.map((b) => b.name))
+    const remoteBranches = remoteOutput.split('\n')
+      .map((b) => b.trim())
+      .filter((b) => b && !b.includes('->'))  // Exclude HEAD -> origin/main
+      .map((b) => b.replace(/^origin\//, ''))
+      .filter((name) => !localNames.has(name))
+      .map((name) => ({ name, current: false, remote: true }))
+
+    return [...localBranches, ...remoteBranches]
+  }
+
+  // Fast branch listing — reads cached refs only, no network fetch
+  ipcMain.handle('git:all-branches-cached', async (event, dirPath) => {
+    try {
+      const branches = await parseBranches(dirPath)
+      return { branches, isGit: true }
+    } catch {
+      return { branches: [], isGit: false }
+    }
+  })
+
+  // Background fetch — fire and forget, updates cached refs for next listing
+  ipcMain.handle('git:fetch-background', async (event, dirPath) => {
+    try { await execAsync('git fetch --prune', { cwd: dirPath, encoding: 'utf8', timeout: 15000 }) } catch {}
+    return { success: true }
+  })
+
+  // Get all branches (local + remote) — with network fetch (legacy, used by CommandPalette)
   ipcMain.handle('git:all-branches', async (event, dirPath) => {
     try {
-      // Fetch remote refs first (async — no longer blocks main process)
       try { await execAsync('git fetch --prune', { cwd: dirPath, encoding: 'utf8', timeout: 15000 }) } catch {}
-
-      const { stdout: localOutput } = await execAsync('git branch', { cwd: dirPath, encoding: 'utf8' })
-      const localBranches = localOutput.split('\n')
-        .map((b) => ({
-          name: b.replace(/^[\s*+]+/, '').trim(),
-          current: b.trim().startsWith('*'),
-          remote: false,
-        }))
-        .filter((b) => b.name)
-
-      const { stdout: remoteOutput } = await execAsync('git branch -r', { cwd: dirPath, encoding: 'utf8' })
-      const localNames = new Set(localBranches.map((b) => b.name))
-      const remoteBranches = remoteOutput.split('\n')
-        .map((b) => b.trim())
-        .filter((b) => b && !b.includes('->'))  // Exclude HEAD -> origin/main
-        .map((b) => b.replace(/^origin\//, ''))
-        .filter((name) => !localNames.has(name))
-        .map((name) => ({ name, current: false, remote: true }))
-
-      return { branches: [...localBranches, ...remoteBranches], isGit: true }
+      const branches = await parseBranches(dirPath)
+      return { branches, isGit: true }
     } catch {
       return { branches: [], isGit: false }
     }

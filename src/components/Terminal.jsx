@@ -302,4 +302,17 @@ function Terminal({ session, isActive, isVisible, bounds }) {
   )
 }
 
-export default Terminal
+export default React.memo(Terminal, (prev, next) => (
+  prev.session.id === next.session.id &&
+  prev.isActive === next.isActive &&
+  prev.isVisible === next.isVisible &&
+  prev.session.name === next.session.name &&
+  prev.session.cwd === next.session.cwd &&
+  prev.session.gitStatus === next.session.gitStatus &&
+  prev.session.activePaneId === next.session.activePaneId &&
+  prev.session.layout === next.session.layout &&
+  prev.bounds?.x === next.bounds?.x &&
+  prev.bounds?.y === next.bounds?.y &&
+  prev.bounds?.w === next.bounds?.w &&
+  prev.bounds?.h === next.bounds?.h
+))

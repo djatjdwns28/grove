@@ -280,7 +280,7 @@ function App() {
     if (!draggingSessionId) setMainDropZone(null)
   }, [draggingSessionId])
 
-  // Centralized git status polling — deduplicated by cwd, 10s interval
+  // Centralized git status polling — active cwd every 10s, inactive every 60s, skip when unfocused
   useEffect(() => {
     const cwdToSessionIds = new Map()
     directories.forEach((dir) => {
@@ -293,8 +293,16 @@ function App() {
 
     if (cwdToSessionIds.size === 0) return
 
+    const activeSession = directories.flatMap(d => d.sessions).find(s => s.id === activeSessionId)
+    const activeCwd = activeSession?.cwd
+    let tickCount = 0
+
     const poll = async () => {
+      if (!document.hasFocus()) return
+      tickCount++
       for (const [cwd, sessionIds] of cwdToSessionIds) {
+        // Active cwd: every tick (10s). Inactive: every 6th tick (60s)
+        if (cwd !== activeCwd && tickCount % 6 !== 0) continue
         try {
           const status = await window.electronAPI.getGitStatus(cwd)
           if (status) {
@@ -309,7 +317,7 @@ function App() {
     poll()
     const interval = setInterval(poll, 10000)
     return () => clearInterval(interval)
-  }, [directories])
+  }, [directories, activeSessionId])
 
   const allSessions = useMemo(
     () => directories.flatMap((dir) =>

@@ -163,7 +163,14 @@ function Sidebar({ onOpenSettings, style }) {
     e.stopPropagation()
     const btnRect = e.currentTarget.getBoundingClientRect()
 
-    const { isGit, branches } = await window.electronAPI.getAllBranches(dir.path)
+    // Parallel: cached branches (no network) + worktrees simultaneously
+    const [{ isGit, branches }, { worktrees }] = await Promise.all([
+      window.electronAPI.getAllBranchesCached(dir.path),
+      window.electronAPI.getGitWorktrees(dir.path),
+    ])
+
+    // Fire background fetch for next time (non-blocking)
+    window.electronAPI.fetchBackground(dir.path)
 
     if (!isGit || branches.length === 0) {
       const existing = dir.sessions.map((s) => s.name)
@@ -171,7 +178,6 @@ function Sidebar({ onOpenSettings, style }) {
       return
     }
 
-    const { worktrees } = await window.electronAPI.getGitWorktrees(dir.path)
     setPickerState({
       dirId: dir.id,
       dirPath: dir.path,
@@ -427,4 +433,4 @@ function Sidebar({ onOpenSettings, style }) {
   )
 }
 
-export default Sidebar
+export default React.memo(Sidebar)

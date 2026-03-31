@@ -16,6 +16,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
   const searchInputRef = useRef(null)
   const lastSizeRef = useRef({ cols: 0, rows: 0 })
   const isFocusedRef = useRef(false)
+  const hasInitializedRef = useRef(false)
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -62,9 +63,12 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     } catch {}
   }
 
-  // xterm initialization
+  // xterm initialization — deferred until first visibility
   useEffect(() => {
     if (!containerRef.current) return
+    if (!isVisible && !hasInitializedRef.current) return
+    if (hasInitializedRef.current) return
+    hasInitializedRef.current = true
 
     const s = useStore.getState().settings
     const themeColors = getThemeColors(s.themeName, s.customColors)
@@ -141,9 +145,23 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       }
       let busySince = null
       let idleTimer = null
+      let writeBuffer = ''
+      let writeRafId = null
+
+      const flushBuffer = () => {
+        writeRafId = null
+        if (writeBuffer) {
+          term.write(writeBuffer)
+          writeBuffer = ''
+        }
+      }
 
       const removeData = window.electronAPI.pty.onData(paneId, (data) => {
-        term.write(data)
+        // Batch writes per animation frame to avoid excessive reflows
+        writeBuffer += data
+        if (!writeRafId) {
+          writeRafId = requestAnimationFrame(flushBuffer)
+        }
 
         // Activity tracking for completion notification
         const s = useStore.getState().settings
@@ -196,11 +214,11 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
         resizeTimer = setTimeout(() => {
           safeFit()
           resizePtyIfNeeded()
-        }, 50)
+        }, 150)
       })
       ro.observe(containerRef.current)
 
-      term._cleanup = () => { removeData(); removeExit(); ro.disconnect(); clearTimeout(idleTimer); clearTimeout(resizeTimer) }
+      term._cleanup = () => { removeData(); removeExit(); ro.disconnect(); clearTimeout(idleTimer); clearTimeout(resizeTimer); if (writeRafId) cancelAnimationFrame(writeRafId) }
     })
 
     // Right-click context menu
@@ -232,12 +250,12 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       searchAddonRef.current = null
       term.dispose()
     }
-  }, [paneId, cwd])
+  }, [paneId, cwd, isVisible])
 
-  // Settings change
+  // Settings change — skip for invisible terminals (applied when they become visible)
   useEffect(() => {
     const term = termRef.current
-    if (!term) return
+    if (!term || !isVisible) return
     const themeColors = getThemeColors(settings.themeName, settings.customColors)
     term.options.theme = themeColors
     term.options.fontFamily = settings.fontFamily
@@ -249,11 +267,22 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       safeFit()
       resizePtyIfNeeded()
     })
-  }, [settings, paneId])
+  }, [settings, paneId, isVisible])
 
-  // Fit when visible
+  // Fit when visible — also apply latest settings (may have changed while hidden)
   useEffect(() => {
     if (!isVisible) return
+    const term = termRef.current
+    if (term) {
+      const s = useStore.getState().settings
+      const themeColors = getThemeColors(s.themeName, s.customColors)
+      term.options.theme = themeColors
+      term.options.fontFamily = s.fontFamily
+      term.options.fontSize = s.fontSize
+      term.options.lineHeight = s.lineHeight
+      term.options.cursorBlink = s.cursorBlink
+      term.options.scrollback = s.scrollback
+    }
     requestAnimationFrame(() => {
       safeFit()
       resizePtyIfNeeded()
@@ -346,4 +375,4 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
   )
 }
 
-export default TerminalPane
+export default React.memo(TerminalPane)

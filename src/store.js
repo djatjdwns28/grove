@@ -300,17 +300,26 @@ const useStore = create(
       broadcastMode: false,
       toggleBroadcast: () => set((s) => ({ broadcastMode: !s.broadcastMode })),
 
-      // Collect all pane IDs for broadcast (avoids per-keystroke tree traversal)
+      // Collect all pane IDs for broadcast (cached — only recomputed when directories change)
+      _paneIdCache: null,
+      _paneIdCacheDirsRef: null,
       getAllPaneIds: () => {
         const state = get()
+        if (state.directories === state._paneIdCacheDirsRef && state._paneIdCache) {
+          return state._paneIdCache
+        }
         const collect = (node) => {
           if (!node) return []
           if (node.type === 'pane') return [node.id]
           return (node.children || []).flatMap(collect)
         }
-        return state.directories.flatMap((d) =>
+        const ids = state.directories.flatMap((d) =>
           d.sessions.flatMap((s) => collect(s.layout || { type: 'pane', id: s.id }))
         )
+        // Store cache on state object directly (not via set()) to avoid re-renders
+        state._paneIdCache = ids
+        state._paneIdCacheDirsRef = state.directories
+        return ids
       },
 
       // Clone session

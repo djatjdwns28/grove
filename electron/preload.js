@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getGitBranches: (dirPath) => ipcRenderer.invoke('git:branches', dirPath),
   getGitWorktrees: (dirPath) => ipcRenderer.invoke('git:worktrees', dirPath),
   getAllBranches: (dirPath) => ipcRenderer.invoke('git:all-branches', dirPath),
+  getAllBranchesCached: (dirPath) => ipcRenderer.invoke('git:all-branches-cached', dirPath),
+  fetchBackground: (dirPath) => ipcRenderer.invoke('git:fetch-background', dirPath),
   addGitWorktree: (params) => ipcRenderer.invoke('git:add-worktree', params),
   removeGitWorktree: (params) => ipcRenderer.invoke('git:remove-worktree', params),
   getGitStatus: (dirPath) => ipcRenderer.invoke('git:status', dirPath),

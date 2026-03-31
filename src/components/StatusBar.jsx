@@ -133,4 +133,4 @@ function StatusBar() {
   )
 }
 
-export default StatusBar
+export default React.memo(StatusBar)
