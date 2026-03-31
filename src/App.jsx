@@ -395,21 +395,51 @@ function App() {
             </div>
           </div>
         )}
-        {allSessions.map((session) => (
+        {/* Grid mode: directory sections */}
+        {!workspaceLayout && directories.map((dir) => {
+          if (dir.sessions.length === 0) return null
+          const cols = Math.ceil(Math.sqrt(dir.sessions.length))
+          const rows = Math.ceil(dir.sessions.length / cols)
+          return (
+            <div key={dir.id} className="dir-section">
+              <div className="dir-section-header">{dir.name}</div>
+              <div
+                className="dir-section-grid"
+                style={{
+                  gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                  gridTemplateRows: `repeat(${rows}, 1fr)`,
+                }}
+              >
+                {dir.sessions.map((s) => (
+                  <Terminal
+                    key={s.id}
+                    session={{ ...s, dirId: dir.id }}
+                    isActive={s.id === activeSessionId}
+                    isVisible={true}
+                    bounds={null}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Workspace mode: absolute positioned sessions */}
+        {workspaceLayout && allSessions.map((session) => (
           <Terminal
             key={session.id}
             session={session}
             isActive={session.id === activeSessionId}
-            isVisible={workspaceLayout ? !!sessionBounds[session.id] : session.id === activeSessionId}
+            isVisible={!!sessionBounds[session.id]}
             bounds={sessionBounds[session.id] || null}
           />
         ))}
-        {workspaceDividers.map((div, i) => (
+        {workspaceLayout && workspaceDividers.map((div, i) => (
           <WorkspaceDivider key={i} divider={div} mainRef={mainRef} />
         ))}
 
         {/* Main area edge drop zones (root level split) */}
-        {draggingSessionId && !draggingFromWorkspace && (
+        {workspaceLayout && draggingSessionId && !draggingFromWorkspace && (
           <>
             {['left', 'right', 'top', 'bottom'].map((zone) => (
               <div

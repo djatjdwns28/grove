@@ -221,27 +221,25 @@ const useStore = create(
 
       setActiveSession: (id) => {
         const state = get()
+
+        // Grid mode (no workspace layout) — just switch active session
+        if (!state.workspaceLayout) {
+          set({ activeSessionId: id })
+          return
+        }
+
+        // Workspace mode — preserve existing behavior
         const isIn = (node, sid) => {
           if (!node) return false
           if (node.type === 'session') return node.sessionId === sid
           return node.children?.some(c => isIn(c, sid)) || false
         }
 
-        if (state.workspaceLayout) {
-          if (isIn(state.workspaceLayout, id)) {
-            set({ activeSessionId: id })
-          } else {
-            set({ activeSessionId: id, workspaceLayout: null, savedWorkspaceLayout: state.workspaceLayout })
-          }
-          return
+        if (isIn(state.workspaceLayout, id)) {
+          set({ activeSessionId: id })
+        } else {
+          set({ activeSessionId: id, workspaceLayout: null, savedWorkspaceLayout: state.workspaceLayout })
         }
-
-        if (state.savedWorkspaceLayout && isIn(state.savedWorkspaceLayout, id)) {
-          set({ activeSessionId: id, workspaceLayout: state.savedWorkspaceLayout, savedWorkspaceLayout: null })
-          return
-        }
-
-        set({ activeSessionId: id })
       },
 
       toggleDirectory: (dirId) =>

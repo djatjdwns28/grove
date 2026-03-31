@@ -217,13 +217,13 @@ function Terminal({ session, isActive, isVisible, bounds }) {
           width: `${bounds.w * 100}%`,
           height: `${bounds.h * 100}%`,
         }
-      : { display: 'flex' }
+      : { display: 'flex', overflow: 'hidden', minWidth: 0, minHeight: 0 }
     : { display: 'none' }
 
   return (
     <div
       ref={wrapperRef}
-      className={`terminal-wrapper ${bounds ? 'workspace-pane' : ''}`}
+      className={`terminal-wrapper ${bounds ? 'workspace-pane' : ''} ${!bounds && isActive ? 'grid-active' : ''}`}
       style={style}
     >
       <div
