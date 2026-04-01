@@ -296,10 +296,12 @@ function DirSectionDivider({ index, sizes, mainRef, onResize }) {
 function GridDivider({ isVertical, index, sizes, gridRef, onResize }) {
   const [dragging, setDragging] = useState(false)
 
-  // Calculate position from cumulative sizes
-  const cumulative = sizes.slice(0, index + 1).reduce((a, b) => a + b, 0)
+  // Position: account for grid padding (6px) and gap (6px)
+  const n = sizes.length
   const total = sizes.reduce((a, b) => a + b, 0)
-  const posFrac = cumulative / total
+  const cumFrac = sizes.slice(0, index + 1).reduce((a, b) => a + b, 0) / total
+  const padGap = 12 + (n - 1) * 6  // 2*padding + (n-1)*gap
+  const offset = 9 + index * 6       // padding + index*gap + gap/2
 
   const handleMouseDown = (e) => {
     e.preventDefault()
@@ -311,21 +313,26 @@ function GridDivider({ isVertical, index, sizes, gridRef, onResize }) {
       if (!gridRef.current) return
       const rect = gridRef.current.getBoundingClientRect()
       const totalPx = isVertical ? rect.width : rect.height
-      const pos = (isVertical ? e.clientX - rect.left : e.clientY - rect.top) / totalPx
+      const contentArea = totalPx - 12 - (n - 1) * 6
+      if (contentArea <= 0) return
 
+      const mouseOffset = isVertical ? e.clientX - rect.left : e.clientY - rect.top
       const sum = sizes.reduce((a, b) => a + b, 0)
-      const beforeSum = sizes.slice(0, index).reduce((a, b) => a + b, 0) / sum
-      const combined = (sizes[index] + sizes[index + 1]) / sum
+      const beforeFrac = sizes.slice(0, index).reduce((a, b) => a + b, 0) / sum
+      const combinedFrac = (sizes[index] + sizes[index + 1]) / sum
+
+      // Pixel start of the combined zone (content of col[index] + gap + content of col[index+1])
+      const startPx = 6 + beforeFrac * contentArea + index * 6
+      const combinedTotal = combinedFrac * contentArea + 6
+      let frac = (mouseOffset - startPx) / combinedTotal
+
       const min = 0.1
+      frac = Math.max(min, Math.min(1 - min, frac))
 
-      let s1 = pos - beforeSum
-      let s2 = combined - s1
-      if (s1 < min) { s1 = min; s2 = combined - min }
-      if (s2 < min) { s2 = min; s1 = combined - min }
-
+      const combined = sizes[index] + sizes[index + 1]
       const newSizes = [...sizes]
-      newSizes[index] = s1 * sum
-      newSizes[index + 1] = s2 * sum
+      newSizes[index] = frac * combined
+      newSizes[index + 1] = (1 - frac) * combined
       onResize(newSizes)
     }
 
@@ -342,8 +349,8 @@ function GridDivider({ isVertical, index, sizes, gridRef, onResize }) {
   }
 
   const style = isVertical
-    ? { left: `${posFrac * 100}%`, top: 0, bottom: 0 }
-    : { top: `${posFrac * 100}%`, left: 0, right: 0 }
+    ? { left: `calc(${cumFrac} * (100% - ${padGap}px) + ${offset}px)`, top: 0, bottom: 0 }
+    : { top: `calc(${cumFrac} * (100% - ${padGap}px) + ${offset}px)`, left: 0, right: 0 }
 
   return (
     <div
