@@ -33,6 +33,7 @@ const useStore = create(
       directories: [],
       activeSessionId: null,
       recentlyClosed: [],
+      dirSectionSizes: null,
       settings: { ...defaultSettings },
 
       updateSettings: (partial) =>
@@ -40,10 +41,26 @@ const useStore = create(
 
       resetSettings: () => set({ settings: { ...defaultSettings } }),
 
+      updateDirSectionSizes: (sizes) => set({ dirSectionSizes: sizes }),
+
+      updateDirGridColSizes: (dirId, sizes) =>
+        set((s) => ({
+          directories: s.directories.map((d) =>
+            d.id === dirId ? { ...d, gridColSizes: sizes } : d
+          ),
+        })),
+
+      updateDirGridRowSizes: (dirId, sizes) =>
+        set((s) => ({
+          directories: s.directories.map((d) =>
+            d.id === dirId ? { ...d, gridRowSizes: sizes } : d
+          ),
+        })),
+
       addDirectory: (path) => {
         const name = path.split('/').pop() || path
         const newDir = { id: uuidv4(), path, name, expanded: true, sessions: [] }
-        set((s) => ({ directories: [...s.directories, newDir] }))
+        set((s) => ({ directories: [...s.directories, newDir], dirSectionSizes: null }))
         return newDir.id
       },
 
@@ -72,6 +89,7 @@ const useStore = create(
             activeSessionId: removedIds.has(s.activeSessionId) ? null : s.activeSessionId,
             workspaceLayout: wl,
             savedWorkspaceLayout: swl,
+            dirSectionSizes: null,
           }
         })
       },
@@ -84,7 +102,7 @@ const useStore = create(
               id, name, cwd,
               layout: { type: 'pane', id, cwd },
               activePaneId: id,
-            }] } : d
+            }], gridColSizes: null, gridRowSizes: null } : d
           ),
           activeSessionId: id,
         }))
@@ -193,7 +211,7 @@ const useStore = create(
 
           return {
             directories: s.directories.map((d) =>
-              d.id === dirId ? { ...d, sessions: remaining } : d
+              d.id === dirId ? { ...d, sessions: remaining, gridColSizes: null, gridRowSizes: null } : d
             ),
             activeSessionId: newActive,
             recentlyClosed,
@@ -212,7 +230,7 @@ const useStore = create(
         const id = uuidv4()
         set((s) => ({
           directories: s.directories.map((d) =>
-            d.id === item.dirId ? { ...d, sessions: [...d.sessions, { id, name: item.name, cwd: item.cwd }] } : d
+            d.id === item.dirId ? { ...d, sessions: [...d.sessions, { id, name: item.name, cwd: item.cwd }], gridColSizes: null, gridRowSizes: null } : d
           ),
           activeSessionId: id,
           recentlyClosed: s.recentlyClosed.filter((_, i) => i !== index),
@@ -336,7 +354,7 @@ const useStore = create(
               id, name, cwd: session.cwd,
               layout: { type: 'pane', id, cwd: session.cwd },
               activePaneId: id,
-            }] } : d
+            }], gridColSizes: null, gridRowSizes: null } : d
           ),
           activeSessionId: id,
         }))
@@ -473,6 +491,7 @@ const useStore = create(
           })),
         })),
         activeSessionId: s.activeSessionId,
+        dirSectionSizes: s.dirSectionSizes || null,
         settings: s.settings,
         workspaceLayout: s.workspaceLayout || null,
         savedWorkspaceLayout: s.savedWorkspaceLayout || null,

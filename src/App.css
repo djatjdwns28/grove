@@ -1194,7 +1194,6 @@
 .dir-section {
   display: flex;
   flex-direction: column;
-  flex: 1;
   min-height: 0;
 }
 
@@ -1210,12 +1209,39 @@
   flex-shrink: 0;
 }
 
+.dir-section-divider {
+  height: 1px;
+  cursor: row-resize;
+  background: var(--bg-surface);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+  padding: 3px 0;
+  margin: -3px 0;
+  background-clip: content-box;
+  transition: background 0.15s;
+}
+
+.dir-section-divider:hover,
+.dir-section-divider-active {
+  background: var(--accent);
+  background-clip: content-box;
+}
+
+.dir-section-grid-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .dir-section-grid {
   display: grid;
   gap: 6px;
   padding: 6px;
-  flex: 1;
+  height: 100%;
   min-height: 0;
+  box-sizing: border-box;
 }
 
 .dir-section-grid .terminal-wrapper {
@@ -1229,6 +1255,53 @@
 .dir-section-grid .terminal-wrapper.grid-active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
+}
+
+.grid-col-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  transform: translateX(-5px);
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.grid-row-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  transform: translateY(-5px);
+  cursor: row-resize;
+  z-index: 10;
+}
+
+.grid-col-divider::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transition: background 0.15s;
+}
+
+.grid-row-divider::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transition: background 0.15s;
+}
+
+.grid-col-divider:hover::after,
+.grid-col-divider.grid-divider-active::after,
+.grid-row-divider:hover::after,
+.grid-row-divider.grid-divider-active::after {
+  background: var(--accent);
 }
 
 /* ─── Workspace Multi-Session Split ──────────── */

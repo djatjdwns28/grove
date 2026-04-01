@@ -9,7 +9,7 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 - **Worktree Management** — Add directories, create worktrees from branches, and manage them from the sidebar
 - **Multi-Session Terminals** — Open multiple terminal sessions per directory with tab-like navigation
 - **Split Panes** — Split terminals vertically or horizontally within a session
-- **Auto Grid Layout** — All terminals visible at once in a directory-grouped grid
+- **Resizable Grid Layout** — All terminals visible at once in a directory-grouped grid with draggable dividers
 - **Workspace Split** — Drag sessions to view multiple sessions side by side
 - **Broadcast Mode** — Type once, send to all terminals simultaneously
 - **Git Status** — See branch name, changed files, ahead/behind indicators at a glance
@@ -42,10 +42,10 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 
 | OS | Architecture | Download |
 |----|-------------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.4.2-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.2/Grove-0.4.2-arm64.dmg) |
-| macOS | Intel | [Grove-0.4.2.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.2/Grove-0.4.2.dmg) |
-| Windows | x64 | [Grove-Setup-0.4.2.exe](https://github.com/djatjdwns28/grove/releases/download/v0.4.2/Grove-Setup-0.4.2.exe) |
-| Linux | x64 | [Grove-0.4.2.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.4.2/Grove-0.4.2.AppImage) |
+| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.4.3-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.3/Grove-0.4.3-arm64.dmg) |
+| macOS | Intel | [Grove-0.4.3.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.3/Grove-0.4.3.dmg) |
+| Windows | x64 | [Grove-Setup-0.4.3.exe](https://github.com/djatjdwns28/grove/releases/download/v0.4.3/Grove-Setup-0.4.3.exe) |
+| Linux | x64 | [Grove-0.4.3.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.4.3/Grove-0.4.3.AppImage) |
 
 Or browse all files on the [Releases](https://github.com/djatjdwns28/grove/releases/latest) page.
 
