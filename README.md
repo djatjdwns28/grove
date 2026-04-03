@@ -9,7 +9,7 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 - **Worktree Management** — Add directories, create worktrees from branches, and manage them from the sidebar
 - **Multi-Session Terminals** — Open multiple terminal sessions per directory with tab-like navigation
 - **Split Panes** — Split terminals vertically or horizontally within a session
-- **Resizable Grid Layout** — All terminals visible at once in a directory-grouped grid with draggable dividers
+- **Flat Grid Layout** — All sessions in one resizable grid with draggable dividers, drag cells to rearrange positions
 - **Workspace Split** — Drag sessions to view multiple sessions side by side
 - **Broadcast Mode** — Type once, send to all terminals simultaneously
 - **Git Status** — See branch name, changed files, ahead/behind indicators at a glance
@@ -18,13 +18,14 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 - **Clickable File Paths** — Click `file:line:col` patterns to open in VS Code
 - **Clickable URLs** — Click URLs in terminal output to open in browser
 - **Session Clone** — Duplicate any session with one click
-- **Drag & Drop Reorder** — Rearrange sessions and directories by dragging
+- **Drag & Drop Reorder** — Rearrange sessions and directories by dragging, including grid positions and cross-directory moves
 - **Snippets** — Save and run frequently used commands
 - **Customizable** — Fonts, themes (Catppuccin, Dracula, Nord, etc.), shell selection, and more
 - **Context Menu** — Right-click for copy, paste, split, and clear
 - **File Drop** — Drag files into terminal to insert paths
 - **Command Notification** — Get notified when long-running commands finish
-- **Session Restore** — Sessions persist across app restarts
+- **Session Persistence** — Window state, terminal scrollback, and working directory preserved across restarts
+- **CWD Tracking** — Terminal header updates automatically when you `cd` to a different directory
 - **Auto Updates** — Get notified when a new version is available
 
 ## Keyboard Shortcuts
@@ -40,14 +41,14 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 
 ## Download
 
-| OS | Architecture | Download |
-|----|-------------|----------|
-| macOS | Apple Silicon (M1/M2/M3/M4) | [Grove-0.4.4-arm64.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.4/Grove-0.4.4-arm64.dmg) |
-| macOS | Intel | [Grove-0.4.4.dmg](https://github.com/djatjdwns28/grove/releases/download/v0.4.4/Grove-0.4.4.dmg) |
-| Windows | x64 | [Grove-Setup-0.4.3.exe](https://github.com/djatjdwns28/grove/releases/download/v0.4.4/Grove-Setup-0.4.3.exe) |
-| Linux | x64 | [Grove-0.4.4.AppImage](https://github.com/djatjdwns28/grove/releases/download/v0.4.4/Grove-0.4.4.AppImage) |
+Download the latest version from the [Releases](https://github.com/djatjdwns28/grove/releases/latest) page.
 
-Or browse all files on the [Releases](https://github.com/djatjdwns28/grove/releases/latest) page.
+| OS | Architecture | File pattern |
+|----|-------------|-------------|
+| macOS | Apple Silicon (M1/M2/M3/M4) | `Grove-*-arm64.dmg` |
+| macOS | Intel | `Grove-*.dmg` |
+| Windows | x64 | `Grove-Setup-*.exe` |
+| Linux | x64 | `Grove-*.AppImage` |
 
 ### macOS — "Apple cannot check for malicious software" warning
 
