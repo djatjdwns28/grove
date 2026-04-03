@@ -3,6 +3,7 @@ import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { SearchAddon } from '@xterm/addon-search'
+import { SerializeAddon } from '@xterm/addon-serialize'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
 import useStore from '../store'
@@ -13,6 +14,7 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
   const termRef = useRef(null)
   const fitAddonRef = useRef(null)
   const searchAddonRef = useRef(null)
+  const serializeAddonRef = useRef(null)
   const searchInputRef = useRef(null)
   const lastSizeRef = useRef({ cols: 0, rows: 0 })
   const isFocusedRef = useRef(false)
@@ -86,12 +88,14 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     const fitAddon = new FitAddon()
     const unicode11 = new Unicode11Addon()
     const searchAddon = new SearchAddon()
+    const serializeAddon = new SerializeAddon()
     const webLinksAddon = new WebLinksAddon((e, uri) => {
       window.electronAPI.openExternal(uri)
     })
     term.loadAddon(fitAddon)
     term.loadAddon(unicode11)
     term.loadAddon(searchAddon)
+    term.loadAddon(serializeAddon)
     term.loadAddon(webLinksAddon)
     term.unicode.activeVersion = '11'
     term.open(containerRef.current)
@@ -133,12 +137,43 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     termRef.current = term
     fitAddonRef.current = fitAddon
     searchAddonRef.current = searchAddon
+    serializeAddonRef.current = serializeAddon
+
+    // Scrollback save helper (called before quit)
+    term._saveScrollback = async () => {
+      try {
+        const data = serializeAddonRef.current?.serialize()
+        if (data) await window.electronAPI.scrollback.save(paneId, data)
+      } catch {}
+    }
+
+    // OSC 7: Track working directory changes (zsh/bash emit file://host/path on cd)
+    const osc7Disposable = term.parser.registerOscHandler(7, (data) => {
+      try {
+        const url = new URL(data)
+        if (url.protocol === 'file:') {
+          const newCwd = decodeURIComponent(url.pathname)
+          useStore.getState().updatePaneCwd(sessionId, paneId, newCwd)
+        }
+      } catch {}
+      return false
+    })
 
     // Initial fit — run after the container has rendered
     requestAnimationFrame(() => safeFit())
 
-    const shellPath = useStore.getState().settings.defaultShell || undefined
-    window.electronAPI.pty.create({ id: paneId, cwd, shell: shellPath }).then((result) => {
+    ;(async () => {
+      // Restore previous scrollback if available
+      try {
+        const saved = await window.electronAPI.scrollback.load(paneId)
+        if (saved?.data) {
+          term.write(saved.data)
+          term.write('\r\n\x1b[2m--- session restored ---\x1b[0m\r\n\r\n')
+        }
+      } catch {}
+
+      const shellPath = useStore.getState().settings.defaultShell || undefined
+      const result = await window.electronAPI.pty.create({ id: paneId, cwd, shell: shellPath })
       if (result && !result.success) {
         term.write(`\r\n\x1b[31m[Error] Failed to create terminal: ${result.error || 'Unknown error'}\x1b[0m\r\n`)
         return
@@ -218,8 +253,25 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       })
       ro.observe(containerRef.current)
 
-      term._cleanup = () => { removeData(); removeExit(); ro.disconnect(); clearTimeout(idleTimer); clearTimeout(resizeTimer); if (writeRafId) cancelAnimationFrame(writeRafId) }
-    })
+      // CWD fallback: poll via lsof if OSC 7 not received after 10s
+      let osc7Received = false
+      const origOsc7Handler = osc7Disposable
+      const osc7Wrapper = term.parser.registerOscHandler(7, () => { osc7Received = true; return false })
+      let cwdPollInterval = null
+      const cwdFallbackTimer = setTimeout(() => {
+        if (osc7Received) return
+        cwdPollInterval = setInterval(async () => {
+          try {
+            const r = await window.electronAPI.pty.getCwd(paneId)
+            if (r?.success && r.cwd) {
+              useStore.getState().updatePaneCwd(sessionId, paneId, r.cwd)
+            }
+          } catch {}
+        }, 30000)
+      }, 10000)
+
+      term._cleanup = () => { removeData(); removeExit(); ro.disconnect(); clearTimeout(idleTimer); clearTimeout(resizeTimer); if (writeRafId) cancelAnimationFrame(writeRafId); osc7Disposable.dispose(); osc7Wrapper.dispose(); clearTimeout(cwdFallbackTimer); clearInterval(cwdPollInterval) }
+    })()
 
     // Right-click context menu
     term.element?.addEventListener('contextmenu', async (e) => {
@@ -288,6 +340,15 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
       resizePtyIfNeeded()
     })
   }, [isVisible, paneId])
+
+  // Save scrollback on quit signal
+  useEffect(() => {
+    const handler = async () => {
+      await termRef.current?._saveScrollback?.()
+    }
+    window.addEventListener('grove:save-scrollback', handler)
+    return () => window.removeEventListener('grove:save-scrollback', handler)
+  }, [paneId])
 
   // Sync focused ref for onData guard
   useEffect(() => {

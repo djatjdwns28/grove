@@ -14,20 +14,62 @@ const ptySessions = new Map()
 
 let mainWindow
 
+// --- Window bounds persistence ---
+function getWindowStatePath() {
+  return path.join(app.getPath('userData'), 'window-state.json')
+}
+
+function loadWindowState() {
+  try {
+    return JSON.parse(fs.readFileSync(getWindowStatePath(), 'utf8'))
+  } catch {
+    return null
+  }
+}
+
+function saveWindowState(win) {
+  if (!win || win.isDestroyed()) return
+  const bounds = win.getBounds()
+  const isMaximized = win.isMaximized()
+  try {
+    fs.writeFileSync(getWindowStatePath(), JSON.stringify({ bounds, isMaximized }))
+  } catch {}
+}
+
 function createWindow() {
+  const saved = loadWindowState()
+  const defaults = { width: 1280, height: 800 }
+
+  let bounds = defaults
+  if (saved?.bounds) {
+    const { screen } = require('electron')
+    const displays = screen.getAllDisplays()
+    const visible = displays.some((d) => {
+      const b = saved.bounds
+      return (
+        b.x < d.bounds.x + d.bounds.width &&
+        b.x + b.width > d.bounds.x &&
+        b.y < d.bounds.y + d.bounds.height &&
+        b.y + b.height > d.bounds.y
+      )
+    })
+    if (visible) bounds = saved.bounds
+  }
+
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    ...bounds,
     minWidth: 700,
     minHeight: 400,
     titleBarStyle: 'hiddenInset',
-    backgroundColor: '#1e1e2e',  // Initial color; CSS variables handle theming
+    backgroundColor: '#1e1e2e',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   })
+
+  if (saved?.isMaximized) mainWindow.maximize()
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173')
@@ -39,6 +81,16 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow()
+
+  // Save window bounds on move/resize (debounced)
+  let boundsTimer = null
+  const debouncedBoundsSave = () => {
+    clearTimeout(boundsTimer)
+    boundsTimer = setTimeout(() => saveWindowState(mainWindow), 500)
+  }
+  mainWindow.on('resize', debouncedBoundsSave)
+  mainWindow.on('move', debouncedBoundsSave)
+  mainWindow.on('close', () => saveWindowState(mainWindow))
 
   // Auto update check (production only)
   if (!isDev) {
@@ -111,6 +163,26 @@ app.whenReady().then(() => {
     if (ptyProcess) {
       try { ptyProcess.kill() } catch (e) {}
       ptySessions.delete(id)
+    }
+  })
+
+  // PTY get current working directory (fallback for shells without OSC 7)
+  ipcMain.handle('pty:get-cwd', async (event, { id }) => {
+    const ptyProcess = ptySessions.get(id)
+    if (!ptyProcess) return { success: false }
+    try {
+      const pid = ptyProcess.pid
+      if (process.platform === 'darwin') {
+        const { stdout } = await execAsync(`lsof -a -d cwd -p ${pid} -Fn`, { encoding: 'utf8', timeout: 2000 })
+        const cwdLine = stdout.split('\n').find((l) => l.startsWith('n/'))
+        if (cwdLine) return { success: true, cwd: cwdLine.slice(1) }
+      } else if (process.platform === 'linux') {
+        const cwd = await fs.promises.readlink(`/proc/${pid}/cwd`)
+        return { success: true, cwd }
+      }
+      return { success: false }
+    } catch {
+      return { success: false }
     }
   })
 
@@ -332,6 +404,53 @@ app.whenReady().then(() => {
       return { worktrees: [], isGit: false }
     }
   })
+
+  // --- Scrollback persistence ---
+  const scrollbackDir = path.join(app.getPath('userData'), 'scrollback')
+
+  ipcMain.handle('scrollback:save', async (event, { id, data }) => {
+    try {
+      await fs.promises.mkdir(scrollbackDir, { recursive: true })
+      await fs.promises.writeFile(path.join(scrollbackDir, `${id}.txt`), data, 'utf8')
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('scrollback:load', async (event, { id }) => {
+    try {
+      const data = await fs.promises.readFile(path.join(scrollbackDir, `${id}.txt`), 'utf8')
+      return { success: true, data }
+    } catch {
+      return { success: true, data: '' }
+    }
+  })
+
+  ipcMain.handle('scrollback:delete', async (event, { id }) => {
+    try { await fs.promises.unlink(path.join(scrollbackDir, `${id}.txt`)) } catch {}
+    return { success: true }
+  })
+
+  // Quit-ready signal from renderer after scrollback save
+  ipcMain.on('app:quit-ready', () => {
+    app.quit()
+  })
+})
+
+// Graceful quit: let renderer save scrollback before exit
+let isQuitting = false
+app.on('before-quit', (e) => {
+  if (!isQuitting) {
+    isQuitting = true
+    e.preventDefault()
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app:before-quit')
+      setTimeout(() => app.quit(), 3000)
+    } else {
+      app.quit()
+    }
+  }
 })
 
 app.on('window-all-closed', () => {

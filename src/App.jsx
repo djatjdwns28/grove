@@ -243,56 +243,6 @@ function SidebarResizer({ width, onResize }) {
   return <div className="sidebar-resizer" onMouseDown={handleMouseDown} />
 }
 
-function DirSectionDivider({ index, sizes, mainRef, onResize }) {
-  const [dragging, setDragging] = useState(false)
-
-  const handleMouseDown = (e) => {
-    e.preventDefault()
-    setDragging(true)
-    document.body.style.cursor = 'row-resize'
-    document.body.style.userSelect = 'none'
-
-    const handleMouseMove = (e) => {
-      if (!mainRef.current) return
-      const rect = mainRef.current.getBoundingClientRect()
-      const pos = (e.clientY - rect.top) / rect.height
-
-      const beforeSum = sizes.slice(0, index).reduce((a, b) => a + b, 0)
-      const combined = sizes[index] + sizes[index + 1]
-      const min = 0.1
-
-      let s1 = pos - beforeSum
-      let s2 = combined - s1
-      if (s1 < min) { s1 = min; s2 = combined - min }
-      if (s2 < min) { s2 = min; s1 = combined - min }
-
-      const newSizes = [...sizes]
-      newSizes[index] = s1
-      newSizes[index + 1] = s2
-      onResize(newSizes)
-    }
-
-    const handleMouseUp = () => {
-      setDragging(false)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }
-
-  return (
-    <div
-      className={`dir-section-divider ${dragging ? 'dir-section-divider-active' : ''}`}
-      onMouseDown={handleMouseDown}
-      onDoubleClick={() => onResize(null)}
-    />
-  )
-}
-
 function GridDivider({ isVertical, index, sizes, gridRef, onResize }) {
   const [dragging, setDragging] = useState(false)
 
@@ -362,68 +312,6 @@ function GridDivider({ isVertical, index, sizes, gridRef, onResize }) {
   )
 }
 
-function DirSection({ dir, activeSessionId }) {
-  const gridRef = useRef(null)
-  const updateDirGridColSizes = useStore((s) => s.updateDirGridColSizes)
-  const updateDirGridRowSizes = useStore((s) => s.updateDirGridRowSizes)
-
-  const cols = Math.ceil(Math.sqrt(dir.sessions.length))
-  const rows = Math.ceil(dir.sessions.length / cols)
-
-  const colSizes = dir.gridColSizes && dir.gridColSizes.length === cols
-    ? dir.gridColSizes
-    : Array(cols).fill(1)
-  const rowSizes = dir.gridRowSizes && dir.gridRowSizes.length === rows
-    ? dir.gridRowSizes
-    : Array(rows).fill(1)
-
-  return (
-    <>
-      <div className="dir-section-header">{dir.name}</div>
-      <div className="dir-section-grid-wrapper">
-        <div
-          ref={gridRef}
-          className="dir-section-grid"
-          style={{
-            gridTemplateColumns: colSizes.map((s) => `${s}fr`).join(' '),
-            gridTemplateRows: rowSizes.map((s) => `${s}fr`).join(' '),
-          }}
-        >
-          {dir.sessions.map((s) => (
-            <Terminal
-              key={s.id}
-              session={{ ...s, dirId: dir.id }}
-              isActive={s.id === activeSessionId}
-              isVisible={true}
-              bounds={null}
-            />
-          ))}
-        </div>
-        {cols > 1 && colSizes.slice(0, -1).map((_, i) => (
-          <GridDivider
-            key={`col-${i}`}
-            isVertical={true}
-            index={i}
-            sizes={colSizes}
-            gridRef={gridRef}
-            onResize={(newSizes) => updateDirGridColSizes(dir.id, newSizes)}
-          />
-        ))}
-        {rows > 1 && rowSizes.slice(0, -1).map((_, i) => (
-          <GridDivider
-            key={`row-${i}`}
-            isVertical={false}
-            index={i}
-            sizes={rowSizes}
-            gridRef={gridRef}
-            onResize={(newSizes) => updateDirGridRowSizes(dir.id, newSizes)}
-          />
-        ))}
-      </div>
-    </>
-  )
-}
-
 function App() {
   const settings = useStore((s) => s.settings)
 
@@ -446,17 +334,31 @@ function App() {
   const splitPane = useStore((s) => s.splitPane)
   const cloneSession = useStore((s) => s.cloneSession)
   const toggleBroadcast = useStore((s) => s.toggleBroadcast)
-  const dirSectionSizes = useStore((s) => s.dirSectionSizes)
-  const updateDirSectionSizes = useStore((s) => s.updateDirSectionSizes)
+  const gridColSizes = useStore((s) => s.gridColSizes)
+  const gridRowSizes = useStore((s) => s.gridRowSizes)
+  const updateGridColSizes = useStore((s) => s.updateGridColSizes)
+  const updateGridRowSizes = useStore((s) => s.updateGridRowSizes)
   const [showSettings, setShowSettings] = useState(false)
   const [showRecent, setShowRecent] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [mainDropZone, setMainDropZone] = useState(null)
+  const [gridDragIdx, setGridDragIdx] = useState(null)
+  const [gridDropIdx, setGridDropIdx] = useState(null)
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem('grove-sidebar-width')
     return saved ? parseInt(saved, 10) : 230
   })
   const mainRef = useRef(null)
+  const gridRef = useRef(null)
+
+  // Scrollback save on quit
+  useEffect(() => {
+    const cleanup = window.electronAPI.onBeforeQuit(() => {
+      window.dispatchEvent(new Event('grove:save-scrollback'))
+      setTimeout(() => window.electronAPI.signalQuitReady(), 2000)
+    })
+    return cleanup
+  }, [])
 
   // Reset drop zone when drag ends
   useEffect(() => {
@@ -502,11 +404,13 @@ function App() {
     return () => clearInterval(interval)
   }, [directories, activeSessionId])
 
+  const gridOrder = useStore((s) => s.gridOrder)
+  const reorderGrid = useStore((s) => s.reorderGrid)
+  const getGridOrderedSessions = useStore((s) => s.getGridOrderedSessions)
+
   const allSessions = useMemo(
-    () => directories.flatMap((dir) =>
-      dir.sessions.map((s) => ({ ...s, dirId: dir.id }))
-    ),
-    [directories]
+    () => getGridOrderedSessions(),
+    [directories, gridOrder]
   )
 
   const sessionBounds = useMemo(() => {
@@ -620,27 +524,81 @@ function App() {
             </div>
           </div>
         )}
-        {/* Grid mode: directory sections */}
-        {!workspaceLayout && (() => {
-          const visibleDirs = directories.filter((d) => d.sessions.length > 0)
-          const sizes = dirSectionSizes && dirSectionSizes.length === visibleDirs.length
-            ? dirSectionSizes
-            : visibleDirs.map(() => 1 / visibleDirs.length)
-          return visibleDirs.map((dir, i) => (
-            <React.Fragment key={dir.id}>
-              {i > 0 && (
-                <DirSectionDivider
-                  index={i - 1}
-                  sizes={sizes}
-                  mainRef={mainRef}
-                  onResize={updateDirSectionSizes}
-                />
-              )}
-              <div className="dir-section" style={{ flex: `${sizes[i]} 1 0%` }}>
-                <DirSection dir={dir} activeSessionId={activeSessionId} />
+        {/* Grid mode: flat grid of all sessions */}
+        {!workspaceLayout && allSessions.length > 0 && (() => {
+          const cols = Math.ceil(Math.sqrt(allSessions.length))
+          const rows = Math.ceil(allSessions.length / cols)
+          const colSizes = gridColSizes && gridColSizes.length === cols
+            ? gridColSizes : Array(cols).fill(1)
+          const rowSizes = gridRowSizes && gridRowSizes.length === rows
+            ? gridRowSizes : Array(rows).fill(1)
+          return (
+            <div className="flat-grid-wrapper">
+              <div
+                ref={gridRef}
+                className="flat-grid"
+                style={{
+                  gridTemplateColumns: colSizes.map((s) => `${s}fr`).join(' '),
+                  gridTemplateRows: rowSizes.map((s) => `${s}fr`).join(' '),
+                }}
+              >
+                {allSessions.map((s, idx) => (
+                  <div
+                    key={s.id}
+                    className={`grid-cell${gridDragIdx === idx ? ' grid-dragging' : ''}${gridDropIdx === idx ? ' grid-drop-target' : ''}`}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = 'move'
+                      e.dataTransfer.setData('text/grid-idx', String(idx))
+                      setGridDragIdx(idx)
+                    }}
+                    onDragEnd={() => { setGridDragIdx(null); setGridDropIdx(null) }}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      if (gridDragIdx !== null && gridDragIdx !== idx) setGridDropIdx(idx)
+                    }}
+                    onDragLeave={() => setGridDropIdx((cur) => cur === idx ? null : cur)}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const from = parseInt(e.dataTransfer.getData('text/grid-idx'), 10)
+                      if (!isNaN(from) && from !== idx) {
+                        reorderGrid(from, idx)
+                        setGridDragIdx(null)
+                        setGridDropIdx(null)
+                      }
+                    }}
+                  >
+                    <Terminal
+                      session={s}
+                      isActive={s.id === activeSessionId}
+                      isVisible={true}
+                      bounds={null}
+                    />
+                  </div>
+                ))}
               </div>
-            </React.Fragment>
-          ))
+              {cols > 1 && colSizes.slice(0, -1).map((_, i) => (
+                <GridDivider
+                  key={`col-${i}`}
+                  isVertical={true}
+                  index={i}
+                  sizes={colSizes}
+                  gridRef={gridRef}
+                  onResize={updateGridColSizes}
+                />
+              ))}
+              {rows > 1 && rowSizes.slice(0, -1).map((_, i) => (
+                <GridDivider
+                  key={`row-${i}`}
+                  isVertical={false}
+                  index={i}
+                  sizes={rowSizes}
+                  gridRef={gridRef}
+                  onResize={updateGridRowSizes}
+                />
+              ))}
+            </div>
+          )
         })()}
 
         {/* Workspace mode: absolute positioned sessions */}

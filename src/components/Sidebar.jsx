@@ -125,6 +125,7 @@ function Sidebar({ onOpenSettings, style }) {
   const reorderDirectories = useStore((s) => s.reorderDirectories)
   const setDraggingSessionId = useStore((s) => s.setDraggingSessionId)
   const cloneSession = useStore((s) => s.cloneSession)
+  const moveSession = useStore((s) => s.moveSession)
 
   const [pickerState, setPickerState] = useState(null)
   const [creatingWorktree, setCreatingWorktree] = useState(null)
@@ -280,8 +281,13 @@ function Sidebar({ onOpenSettings, style }) {
 
   const handleSessionDrop = (e, dirId, toIdx) => {
     e.currentTarget.classList.remove('drag-over')
-    if (dragSession && dragSession.dirId === dirId && dragSession.idx !== toIdx) {
-      reorderSessions(dirId, dragSession.idx, toIdx)
+    if (dragSession) {
+      if (dragSession.dirId === dirId && dragSession.idx !== toIdx) {
+        reorderSessions(dirId, dragSession.idx, toIdx)
+      } else if (dragSession.dirId !== dirId) {
+        const sessionId = e.dataTransfer.getData('text/session-id')
+        if (sessionId) moveSession(sessionId, dragSession.dirId, dirId)
+      }
     }
     setDragSession(null)
   }
@@ -301,10 +307,17 @@ function Sidebar({ onOpenSettings, style }) {
     e.currentTarget.classList.remove('drag-over')
   }
 
-  const handleDirDrop = (e, toIdx) => {
+  const handleDirDrop = (e, toIdx, dirId) => {
     e.currentTarget.classList.remove('drag-over')
+    // Directory reorder
     if (dragDir !== null && dragDir !== toIdx) {
       reorderDirectories(dragDir, toIdx)
+    }
+    // Cross-directory session move (drop on dir header)
+    if (dragSession && dragSession.dirId !== dirId) {
+      const sessionId = e.dataTransfer.getData('text/session-id')
+      if (sessionId) moveSession(sessionId, dragSession.dirId, dirId)
+      setDragSession(null)
     }
     setDragDir(null)
   }
@@ -332,7 +345,7 @@ function Sidebar({ onOpenSettings, style }) {
             onDragStart={(e) => handleDirDragStart(e, dirIdx)}
             onDragOver={handleDirDragOver}
             onDragLeave={handleDirDragLeave}
-            onDrop={(e) => handleDirDrop(e, dirIdx)}
+            onDrop={(e) => handleDirDrop(e, dirIdx, dir.id)}
           >
             <div className="dir-row" onClick={() => toggleDirectory(dir.id)}>
               <span className="chevron">{dir.expanded ? '▾' : '▸'}</span>

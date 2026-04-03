@@ -1191,51 +1191,14 @@
 }
 
 /* ─── Directory Section Grid ─────────────────── */
-.dir-section {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.dir-section-header {
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-dim);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  background: var(--bg-mantle);
-  border-bottom: 1px solid var(--bg-surface);
-  flex-shrink: 0;
-}
-
-.dir-section-divider {
-  height: 1px;
-  cursor: row-resize;
-  background: var(--bg-surface);
-  flex-shrink: 0;
-  position: relative;
-  z-index: 5;
-  padding: 3px 0;
-  margin: -3px 0;
-  background-clip: content-box;
-  transition: background 0.15s;
-}
-
-.dir-section-divider:hover,
-.dir-section-divider-active {
-  background: var(--accent);
-  background-clip: content-box;
-}
-
-.dir-section-grid-wrapper {
+.flat-grid-wrapper {
   position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-.dir-section-grid {
+.flat-grid {
   display: grid;
   gap: 6px;
   padding: 6px;
@@ -1244,15 +1207,30 @@
   box-sizing: border-box;
 }
 
-.dir-section-grid .terminal-wrapper {
+.grid-cell {
+  min-width: 0;
+  min-height: 0;
   border-radius: 8px;
   border: 1px solid var(--bg-surface);
   overflow: hidden;
-  min-width: 0;
-  min-height: 0;
+  transition: opacity 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
-.dir-section-grid .terminal-wrapper.grid-active {
+.grid-cell .terminal-wrapper {
+  border: none;
+  border-radius: 0;
+}
+
+.grid-cell.grid-dragging {
+  opacity: 0.4;
+}
+
+.grid-cell.grid-drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.flat-grid .grid-cell:has(.grid-active) {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }

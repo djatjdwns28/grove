@@ -33,7 +33,9 @@ const useStore = create(
       directories: [],
       activeSessionId: null,
       recentlyClosed: [],
-      dirSectionSizes: null,
+      gridColSizes: null,
+      gridRowSizes: null,
+      gridOrder: null,
       settings: { ...defaultSettings },
 
       updateSettings: (partial) =>
@@ -41,26 +43,53 @@ const useStore = create(
 
       resetSettings: () => set({ settings: { ...defaultSettings } }),
 
-      updateDirSectionSizes: (sizes) => set({ dirSectionSizes: sizes }),
+      updateGridColSizes: (sizes) => set({ gridColSizes: sizes }),
+      updateGridRowSizes: (sizes) => set({ gridRowSizes: sizes }),
 
-      updateDirGridColSizes: (dirId, sizes) =>
-        set((s) => ({
-          directories: s.directories.map((d) =>
-            d.id === dirId ? { ...d, gridColSizes: sizes } : d
-          ),
-        })),
+      // Grid ordering: reorder sessions in flat grid
+      reorderGrid: (fromIdx, toIdx) =>
+        set((s) => {
+          const allIds = s.gridOrder || s.directories.flatMap((d) => d.sessions.map((ss) => ss.id))
+          const order = [...allIds]
+          const [item] = order.splice(fromIdx, 1)
+          order.splice(toIdx, 0, item)
+          return { gridOrder: order }
+        }),
 
-      updateDirGridRowSizes: (dirId, sizes) =>
-        set((s) => ({
-          directories: s.directories.map((d) =>
-            d.id === dirId ? { ...d, gridRowSizes: sizes } : d
-          ),
-        })),
+      getGridOrderedSessions: () => {
+        const s = get()
+        const allSessions = s.directories.flatMap((d) =>
+          d.sessions.map((ss) => ({ ...ss, dirId: d.id }))
+        )
+        if (!s.gridOrder) return allSessions
+        const sessionMap = new Map(allSessions.map((ss) => [ss.id, ss]))
+        const ordered = s.gridOrder.map((id) => sessionMap.get(id)).filter(Boolean)
+        // Append any sessions not in gridOrder (newly added)
+        const orderedIds = new Set(s.gridOrder)
+        allSessions.forEach((ss) => { if (!orderedIds.has(ss.id)) ordered.push(ss) })
+        return ordered
+      },
+
+      // Move session between directories
+      moveSession: (sessionId, fromDirId, toDirId) =>
+        set((s) => {
+          if (fromDirId === toDirId) return s
+          const fromDir = s.directories.find((d) => d.id === fromDirId)
+          const session = fromDir?.sessions.find((ss) => ss.id === sessionId)
+          if (!session) return s
+          return {
+            directories: s.directories.map((d) => {
+              if (d.id === fromDirId) return { ...d, sessions: d.sessions.filter((ss) => ss.id !== sessionId) }
+              if (d.id === toDirId) return { ...d, sessions: [...d.sessions, session] }
+              return d
+            }),
+          }
+        }),
 
       addDirectory: (path) => {
         const name = path.split('/').pop() || path
         const newDir = { id: uuidv4(), path, name, expanded: true, sessions: [] }
-        set((s) => ({ directories: [...s.directories, newDir], dirSectionSizes: null }))
+        set((s) => ({ directories: [...s.directories, newDir] }))
         return newDir.id
       },
 
@@ -89,7 +118,9 @@ const useStore = create(
             activeSessionId: removedIds.has(s.activeSessionId) ? null : s.activeSessionId,
             workspaceLayout: wl,
             savedWorkspaceLayout: swl,
-            dirSectionSizes: null,
+            gridColSizes: null,
+            gridRowSizes: null,
+            gridOrder: s.gridOrder ? s.gridOrder.filter((id) => !removedIds.has(id)) : null,
           }
         })
       },
@@ -102,9 +133,12 @@ const useStore = create(
               id, name, cwd,
               layout: { type: 'pane', id, cwd },
               activePaneId: id,
-            }], gridColSizes: null, gridRowSizes: null } : d
+            }] } : d
           ),
           activeSessionId: id,
+          gridColSizes: null,
+          gridRowSizes: null,
+          gridOrder: s.gridOrder ? [...s.gridOrder, id] : null,
         }))
         return id
       },
@@ -138,6 +172,7 @@ const useStore = create(
 
       closePane: (sessionId, paneId) => {
         window.electronAPI?.pty.kill(paneId)
+        window.electronAPI?.scrollback?.delete(paneId)
         const removeNode = (node) => {
           if (node.type === 'pane') return node.id === paneId ? null : node
           const children = node.children.map(removeNode).filter(Boolean)
@@ -174,16 +209,20 @@ const useStore = create(
         })),
 
       removeSession: (dirId, sessionId) => {
-        // kill all panes in layout
+        // kill all panes in layout and clean up scrollback files
         const killAll = (node) => {
           if (!node) return
-          if (node.type === 'pane') { window.electronAPI?.pty.kill(node.id); return }
+          if (node.type === 'pane') {
+            window.electronAPI?.pty.kill(node.id)
+            window.electronAPI?.scrollback?.delete(node.id)
+            return
+          }
           node.children?.forEach(killAll)
         }
         const dir = get().directories.find((d) => d.id === dirId)
         const session = dir?.sessions.find((ss) => ss.id === sessionId)
         if (session?.layout) killAll(session.layout)
-        else window.electronAPI?.pty.kill(sessionId)
+        else { window.electronAPI?.pty.kill(sessionId); window.electronAPI?.scrollback?.delete(sessionId) }
         set((s) => {
           const dir = s.directories.find((d) => d.id === dirId)
           const closed = dir?.sessions.find((ss) => ss.id === sessionId)
@@ -211,12 +250,15 @@ const useStore = create(
 
           return {
             directories: s.directories.map((d) =>
-              d.id === dirId ? { ...d, sessions: remaining, gridColSizes: null, gridRowSizes: null } : d
+              d.id === dirId ? { ...d, sessions: remaining } : d
             ),
             activeSessionId: newActive,
             recentlyClosed,
             workspaceLayout: newWorkspaceLayout,
             savedWorkspaceLayout: newSavedWorkspaceLayout,
+            gridColSizes: null,
+            gridRowSizes: null,
+            gridOrder: s.gridOrder ? s.gridOrder.filter((id) => id !== sessionId) : null,
           }
         })
       },
@@ -230,10 +272,13 @@ const useStore = create(
         const id = uuidv4()
         set((s) => ({
           directories: s.directories.map((d) =>
-            d.id === item.dirId ? { ...d, sessions: [...d.sessions, { id, name: item.name, cwd: item.cwd }], gridColSizes: null, gridRowSizes: null } : d
+            d.id === item.dirId ? { ...d, sessions: [...d.sessions, { id, name: item.name, cwd: item.cwd }] } : d
           ),
           activeSessionId: id,
           recentlyClosed: s.recentlyClosed.filter((_, i) => i !== index),
+          gridColSizes: null,
+          gridRowSizes: null,
+          gridOrder: s.gridOrder ? [...s.gridOrder, id] : null,
         }))
       },
 
@@ -289,6 +334,30 @@ const useStore = create(
               sessions: d.sessions.map((ss) =>
                 ss.id === sessionId ? { ...ss, gitStatus } : ss
               ),
+            }
+          }),
+        })),
+
+      // CWD tracking: update pane cwd when shell changes directory (OSC 7)
+      updatePaneCwd: (sessionId, paneId, newCwd) =>
+        set((s) => ({
+          directories: s.directories.map((d) => {
+            const session = d.sessions.find((ss) => ss.id === sessionId)
+            if (!session) return d
+            const updateCwdInLayout = (node) => {
+              if (!node) return node
+              if (node.type === 'pane' && node.id === paneId) return { ...node, cwd: newCwd }
+              if (node.children) return { ...node, children: node.children.map(updateCwdInLayout) }
+              return node
+            }
+            return {
+              ...d,
+              sessions: d.sessions.map((ss) => {
+                if (ss.id !== sessionId) return ss
+                const updatedLayout = updateCwdInLayout(ss.layout)
+                const newSessionCwd = paneId === ss.id ? newCwd : ss.cwd
+                return { ...ss, cwd: newSessionCwd, layout: updatedLayout }
+              }),
             }
           }),
         })),
@@ -354,9 +423,12 @@ const useStore = create(
               id, name, cwd: session.cwd,
               layout: { type: 'pane', id, cwd: session.cwd },
               activePaneId: id,
-            }], gridColSizes: null, gridRowSizes: null } : d
+            }] } : d
           ),
           activeSessionId: id,
+          gridColSizes: null,
+          gridRowSizes: null,
+          gridOrder: s.gridOrder ? [...s.gridOrder, id] : null,
         }))
         return id
       },
@@ -491,7 +563,9 @@ const useStore = create(
           })),
         })),
         activeSessionId: s.activeSessionId,
-        dirSectionSizes: s.dirSectionSizes || null,
+        gridColSizes: s.gridColSizes || null,
+        gridRowSizes: s.gridRowSizes || null,
+        gridOrder: s.gridOrder || null,
         settings: s.settings,
         workspaceLayout: s.workspaceLayout || null,
         savedWorkspaceLayout: s.savedWorkspaceLayout || null,

@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     write: (id, data) => ipcRenderer.send('pty:write', { id, data }),
     resize: (id, cols, rows) => ipcRenderer.send('pty:resize', { id, cols, rows }),
     kill: (id) => ipcRenderer.send('pty:kill', { id }),
+    getCwd: (id) => ipcRenderer.invoke('pty:get-cwd', { id }),
     onData: (id, cb) => {
       const handler = (_, data) => cb(data)
       ipcRenderer.on(`pty:data:${id}`, handler)
@@ -17,6 +18,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => ipcRenderer.removeListener(`pty:exit:${id}`, handler)
     },
   },
+  scrollback: {
+    save: (id, data) => ipcRenderer.invoke('scrollback:save', { id, data }),
+    load: (id) => ipcRenderer.invoke('scrollback:load', { id }),
+    delete: (id) => ipcRenderer.invoke('scrollback:delete', { id }),
+  },
+  onBeforeQuit: (cb) => {
+    const handler = () => cb()
+    ipcRenderer.on('app:before-quit', handler)
+    return () => ipcRenderer.removeListener('app:before-quit', handler)
+  },
+  signalQuitReady: () => ipcRenderer.send('app:quit-ready'),
   openDirectory: () => ipcRenderer.invoke('dialog:open-directory'),
   showContextMenu: (params) => ipcRenderer.invoke('context-menu:show', params),
   getGitBranches: (dirPath) => ipcRenderer.invoke('git:branches', dirPath),
