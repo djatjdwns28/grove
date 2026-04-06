@@ -542,10 +542,15 @@ function App() {
                   gridTemplateRows: rowSizes.map((s) => `${s}fr`).join(' '),
                 }}
               >
-                {allSessions.map((s, idx) => (
+                {allSessions.map((s, idx) => {
+                  const isLastItem = idx === allSessions.length - 1
+                  const lastRowItems = allSessions.length % cols
+                  const colSpan = isLastItem && lastRowItems !== 0 ? cols - lastRowItems + 1 : 1
+                  return (
                   <div
                     key={s.id}
                     className={`grid-cell${gridDragIdx === idx ? ' grid-dragging' : ''}${gridDropIdx === idx ? ' grid-drop-target' : ''}`}
+                    style={colSpan > 1 ? { gridColumn: `span ${colSpan}` } : undefined}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.effectAllowed = 'move'
@@ -575,7 +580,8 @@ function App() {
                       bounds={null}
                     />
                   </div>
-                ))}
+                  )
+                })}
               </div>
               {cols > 1 && colSizes.slice(0, -1).map((_, i) => (
                 <GridDivider

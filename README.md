@@ -9,7 +9,7 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 - **Worktree Management** — Add directories, create worktrees from branches, and manage them from the sidebar
 - **Multi-Session Terminals** — Open multiple terminal sessions per directory with tab-like navigation
 - **Split Panes** — Split terminals vertically or horizontally within a session
-- **Flat Grid Layout** — All sessions in one resizable grid with draggable dividers, drag cells to rearrange positions
+- **Flat Grid Layout** — All sessions in one resizable grid with draggable dividers, drag cells to rearrange positions. Last cell automatically spans remaining columns for clean layout
 - **Workspace Split** — Drag sessions to view multiple sessions side by side
 - **Broadcast Mode** — Type once, send to all terminals simultaneously
 - **Git Status** — See branch name, changed files, ahead/behind indicators at a glance
@@ -24,7 +24,7 @@ A terminal manager built for git worktree workflows. Run multiple terminals acro
 - **Context Menu** — Right-click for copy, paste, split, and clear
 - **File Drop** — Drag files into terminal to insert paths
 - **Command Notification** — Get notified when long-running commands finish
-- **Session Persistence** — Window state, terminal scrollback, and working directory preserved across restarts
+- **Session Persistence** — Window state, terminal scrollback, and working directory preserved across restarts and layout changes
 - **CWD Tracking** — Terminal header updates automatically when you `cd` to a different directory
 - **Auto Updates** — Get notified when a new version is available
 

@@ -296,6 +296,12 @@ function TerminalPane({ paneId, cwd, isVisible, isFocused, sessionId, onFocus })
     term.onData(() => { if (!isFocusedRef.current) onFocus?.() })
 
     return () => {
+      // Save scrollback before disposal so remount (layout switch) restores content
+      try {
+        const data = serializeAddonRef.current?.serialize()
+        if (data) window.electronAPI.scrollback.save(paneId, data)
+      } catch {}
+
       term._cleanup?.()
       termRef.current = null
       fitAddonRef.current = null
